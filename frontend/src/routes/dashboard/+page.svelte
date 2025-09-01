@@ -1,14 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
+	import { user, isAuthenticated } from '$lib/auth/google-direct.js';
+	import { goto } from '$app/navigation';
 	
 	let links = [];
 	let loading = true;
 
 	onMount(async () => {
+		if (!$isAuthenticated || !$user) {
+			goto('/auth');
+			return;
+		}
+
 		try {
 			const response = await fetch('http://localhost:8080/api/v1/links', {
 				headers: {
-					'X-User-ID': 'demo-user'
+					'X-User-ID': $user.id
 				}
 			});
 			
@@ -31,7 +38,7 @@
 <div>
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-		<p class="text-gray-600 mt-2">Gerencie seus links encurtados</p>
+		<p class="text-gray-700 mt-2">Gerencie seus links encurtados</p>
 	</div>
 
 	{#if loading}

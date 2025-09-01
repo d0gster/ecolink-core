@@ -1,19 +1,26 @@
-.PHONY: help dev build clean test
+.PHONY: help setup dev build clean test install
 
 help: ## Mostra esta ajuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-dev: ## Inicia ambiente de desenvolvimento
+setup: ## Configuração inicial do projeto
+	@echo "🔧 Configurando projeto..."
+	@cp -n .env.example .env || true
+	@cp -n frontend/.env.example frontend/.env.local || true
+	@echo "✅ Arquivos .env criados. Configure suas credenciais!"
+	@echo "📚 Leia AUTH0_SETUP.md para configuração completa"
+
+dev: ## Inicia ambiente de desenvolvimento completo
 	@echo "🌱 Iniciando EcoLink em modo desenvolvimento..."
 	docker-compose up --build
 
 dev-backend: ## Inicia apenas o backend
 	@echo "🚀 Iniciando backend Go..."
-	cd backend && go run cmd/main.go
+	cd backend && go mod tidy && go run cmd/main.go
 
 dev-frontend: ## Inicia apenas o frontend
 	@echo "⚡ Iniciando frontend SvelteKit..."
-	cd frontend && npm run dev
+	cd frontend && npm install && npm run dev
 
 build: ## Build para produção
 	@echo "📦 Fazendo build para produção..."

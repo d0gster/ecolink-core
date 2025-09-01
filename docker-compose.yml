@@ -11,14 +11,24 @@ services:
       - PORT=8080
       - BASE_URL=http://localhost:8080
       - DB_TYPE=memory
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN:-}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}
+      - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID:-}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS:-/dev/null}:${GOOGLE_APPLICATION_CREDENTIALS:-/dev/null}:ro
 
   frontend:
     build:
       context: .
       dockerfile: docker/Dockerfile.frontend
     ports:
-      - "3000:3000"
+      - "5173:5173"
     depends_on:
       - backend
     environment:
       - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080
+      - VITE_AUTH0_DOMAIN=${VITE_AUTH0_DOMAIN:-}
+      - VITE_AUTH0_CLIENT_ID=${VITE_AUTH0_CLIENT_ID:-}
+      - VITE_AUTH0_AUDIENCE=${VITE_AUTH0_AUDIENCE:-}

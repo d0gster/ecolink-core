@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoLink - Teste</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-green-600 mb-8">🌱 EcoLink - Teste</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Encurtar URL</h2>
+            <div class="flex gap-2">
+                <input type="url" id="urlInput" placeholder="Cole sua URL aqui..." 
+                       class="flex-1 border border-gray-300 rounded px-3 py-2">
+                <button onclick="shortenUrl()" 
+                        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    Encurtar
+                </button>
+            </div>
+            <div id="result" class="mt-4 hidden">
+                <div class="bg-green-50 p-4 rounded border border-green-200">
+                    <p class="font-semibold text-green-800">Link criado!</p>
+                    <div class="mt-2">
+                        <label class="block text-sm text-gray-600">URL Encurtada:</label>
+                        <div class="flex gap-2 mt-1">
+                            <input type="text" id="shortUrl" readonly 
+                                   class="flex-1 border border-gray-300 rounded px-2 py-1 bg-gray-50">
+                            <button onclick="copyUrl()" 
+                                    class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                                Copiar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <p class="text-sm text-gray-600 mb-2">QR Code:</p>
+                        <img id="qrCode" class="mx-auto border rounded" style="max-width: 200px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h2 class="text-xl font-semibold mb-4">Seus Links</h2>
+            <div id="linksList">
+                <p class="text-gray-500">Carregando...</p>
+            </div>
+            <button onclick="loadLinks()" 
+                    class="mt-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Recarregar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        async function shortenUrl() {
+            const url = document.getElementById('urlInput').value;
+            if (!url) return;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/links', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': 'demo-user'
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('shortUrl').value = data.short_url;
+                    document.getElementById('qrCode').src = 'data:image/png;base64,' + data.qr_code;
+                    document.getElementById('result').classList.remove('hidden');
+                    loadLinks();
+                } else {
+                    alert('Erro ao encurtar URL');
+                }
+            } catch (error) {
+                alert('Erro de conexão: ' + error.message);
+            }
+        }
+
+        async function loadLinks() {
+            try {
+                const response = await fetch('http://localhost:8080/api/v1/links', {
+                    headers: { 'X-User-ID': 'demo-user' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const links = data.links || [];
+                    
+                    if (links.length === 0) {
+                        document.getElementById('linksList').innerHTML = 
+                            '<p class="text-gray-500">Nenhum link ainda</p>';
+                    } else {
+                        document.getElementById('linksList').innerHTML = links.map(link => `
+                            <div class="border-b border-gray-200 py-3">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 truncate">${link.original_url}</p>
+                                        <p class="text-sm text-green-600">localhost:8080/${link.short_code}</p>
+                                        <p class="text-xs text-gray-500">
+                                            ${link.click_count} cliques • ${new Date(link.created_at).toLocaleDateString('pt-BR')}
+                                        </p>
+                                    </div>
+                                    <button onclick="copyToClipboard('http://localhost:8080/${link.short_code}')"
+                                            class="text-blue-500 hover:text-blue-700 text-sm">
+                                        Copiar
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                document.getElementById('linksList').innerHTML = 
+                    '<p class="text-red-500">Erro ao carregar links</p>';
+            }
+        }
+
+        function copyUrl() {
+            const shortUrl = document.getElementById('shortUrl');
+            shortUrl.select();
+            document.execCommand('copy');
+            alert('URL copiada!');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('URL copiada!');
+            });
+        }
+
+        // Carrega links ao iniciar
+        loadLinks();
+    </script>
+</body>
+</html>

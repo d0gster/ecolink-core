@@ -3,12 +3,11 @@ package models
 import "time"
 
 type Link struct {
-	ID          string    `json:"id" firestore:"id"`
-	OriginalURL string    `json:"original_url" firestore:"original_url"`
-	ShortCode   string    `json:"short_code" firestore:"short_code"`
-	UserID      string    `json:"user_id" firestore:"user_id"`
-	CreatedAt   time.Time `json:"created_at" firestore:"created_at"`
-	ClickCount  int       `json:"click_count" firestore:"click_count"`
+	URL       string    `json:"original_url" firestore:"url"`
+	Code      string    `json:"short_code" firestore:"code"`
+	UserID    string    `json:"user_id" firestore:"user_id"`
+	CreatedAt time.Time `json:"created_at" firestore:"created_at"`
+	Clicks    int       `json:"click_count" firestore:"clicks"`
 }
 
 type CreateLinkRequest struct {
