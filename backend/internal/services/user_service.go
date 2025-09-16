@@ -1,11 +1,11 @@
 package services
 
 import (
+	"crypto/rand"
 	"ecolink-core/internal/models"
 	"ecolink-core/pkg/database"
-	"time"
-	"crypto/rand"
 	"encoding/hex"
+	"time"
 )
 
 type UserService struct {
@@ -17,7 +17,7 @@ func NewUserService(db database.Database) *UserService {
 }
 
 func (s *UserService) CreateOrUpdateUser(googleID, name, email, picture string) (*models.User, error) {
-	// Verifica se usuário já existe
+	// Check if user exists
 	existingUser, err := s.db.GetUserByGoogleID(googleID)
 	if err == nil {
 		// Atualiza dados existentes
@@ -25,14 +25,14 @@ func (s *UserService) CreateOrUpdateUser(googleID, name, email, picture string) 
 		existingUser.Email = email
 		existingUser.Picture = picture
 		existingUser.UpdatedAt = time.Now()
-		
+
 		if err := s.db.SaveUser(existingUser); err != nil {
 			return nil, err
 		}
 		return existingUser, nil
 	}
 
-	// Cria novo usuário
+	// Create new user
 	userID := generateUserID()
 	user := &models.User{
 		ID:        userID,

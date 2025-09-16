@@ -6,8 +6,8 @@ import (
 	"ecolink-core/pkg/utils"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"time"
-
 
 	"github.com/skip2/go-qrcode"
 )
@@ -25,14 +25,17 @@ func NewLinkService(db database.Database, baseURL string) *LinkService {
 }
 
 func (s *LinkService) CreateLink(originalURL, userID string) (*models.CreateLinkResponse, error) {
-	// Verifica se já existe um link para esta URL e usuário
+	// Check if link already exists for this URL and user
 	userLinks, err := s.db.GetUserLinks(userID)
 	if err == nil {
 		for _, existingLink := range userLinks {
 			if existingLink.URL == originalURL {
-				// Retorna link existente
+				// Return existent link
 				shortURL := s.baseURL + "/" + existingLink.Code
-				qrCode, _ := s.generateQRCode(shortURL)
+				qrCode, err := s.generateQRCode(shortURL)
+				if err != nil {
+					return nil, err
+				}
 				return &models.CreateLinkResponse{
 					ShortURL: shortURL,
 					QRCode:   qrCode,
@@ -40,9 +43,9 @@ func (s *LinkService) CreateLink(originalURL, userID string) (*models.CreateLink
 			}
 		}
 	}
-	
+
 	shortCode := utils.GenerateShortCode(originalURL)
-	
+
 	link := &models.Link{
 		URL:       originalURL,
 		Code:      shortCode,
@@ -50,17 +53,17 @@ func (s *LinkService) CreateLink(originalURL, userID string) (*models.CreateLink
 		CreatedAt: time.Now(),
 		Clicks:    0,
 	}
-	
+
 	if err := s.db.SaveLink(link); err != nil {
 		return nil, err
 	}
-	
+
 	shortURL := s.baseURL + "/" + shortCode
 	qrCode, err := s.generateQRCode(shortURL)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &models.CreateLinkResponse{
 		ShortURL: shortURL,
 		QRCode:   qrCode,
@@ -72,10 +75,12 @@ func (s *LinkService) GetOriginalURL(shortCode string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
-	// Incrementa contador de cliques
-	s.db.IncrementClicks(shortCode)
-	
+
+	// Increment click counter
+	if err := s.db.IncrementClicks(shortCode); err != nil {
+		return "", fmt.Errorf("failed to increment click counter: %w", err)
+	}
+
 	return link.URL, nil
 }
 
@@ -84,16 +89,16 @@ func (s *LinkService) GetUserLinks(userID string) ([]*models.Link, error) {
 }
 
 func (s *LinkService) DeleteLink(code, userID string) error {
-	// Verifica se o link pertence ao usuário
+	// Check if link belongs to user
 	link, err := s.db.GetLink(code)
 	if err != nil {
 		return err
 	}
-	
+
 	if link.UserID != userID {
 		return errors.New("unauthorized")
 	}
-	
+
 	return s.db.DeleteLink(code)
 }
 

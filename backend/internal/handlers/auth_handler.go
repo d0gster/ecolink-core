@@ -1,15 +1,15 @@
 package handlers
 
 import (
+	"crypto/rand"
 	"ecolink-core/internal/services"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
-	"crypto/rand"
-	"encoding/hex"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,10 +21,10 @@ type AuthHandler struct {
 }
 
 type GoogleTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-	IDToken     string `json:"id_token"`
+	AccessToken string `json:"accessToken"`
+	TokenType   string `json:"tokenType"`
+	ExpiresIn   int    `json:"expiresIn"`
+	IDToken     string `json:"idToken"`
 }
 
 type GoogleUserInfo struct {
@@ -45,7 +45,7 @@ func NewAuthHandler(clientID, clientSecret string, userService *services.UserSer
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	var req struct {
 		Code        string `json:"code" binding:"required"`
-		RedirectURI string `json:"redirect_uri" binding:"required"`
+		RedirectURI string `json:"redirectUri" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -53,25 +53,25 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Trocar código por token
+	// Exchange code for token
 	token, err := h.exchangeCodeForToken(req.Code, req.RedirectURI)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to exchange code for token"})
 		return
 	}
 
-	// Obter informações do usuário
+	// Get user information
 	userInfo, err := h.getUserInfo(token.AccessToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get user info"})
 		return
 	}
-	
+
 	// Debug: log user info
-	fmt.Printf("Google User Info: ID=%s, Name=%s, Email=%s, Picture=%s\n", 
+	fmt.Printf("Google User Info: ID=%s, Name=%s, Email=%s, Picture=%s\n",
 		userInfo.ID, userInfo.Name, userInfo.Email, userInfo.Picture)
 
-	// Registrar/atualizar usuário no sistema
+	// Register/update user in system
 	user, err := h.userService.CreateOrUpdateUser(
 		userInfo.ID,
 		userInfo.Name,
@@ -83,12 +83,16 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Gerar token JWT próprio
-	sessionToken := h.generateSessionToken(user.ID)
+	// Generate JWT token
+	sessionToken, err := h.generateSessionToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate session token"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
-		"session_token": sessionToken,
+		"user":         user,
+		"sessionToken": sessionToken,
 	})
 }
 
@@ -107,6 +111,11 @@ func (h *AuthHandler) exchangeCodeForToken(code, redirectURI string) (*GoogleTok
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to exchange code for token: %s", string(bodyBytes))
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -136,6 +145,11 @@ func (h *AuthHandler) getUserInfo(accessToken string) (*GoogleUserInfo, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to get user info: %s", string(bodyBytes))
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -149,8 +163,11 @@ func (h *AuthHandler) getUserInfo(accessToken string) (*GoogleUserInfo, error) {
 	return &userInfo, nil
 }
 
-func (h *AuthHandler) generateSessionToken(userID string) string {
+func (h *AuthHandler) generateSessionToken() (string, error) {
 	bytes := make([]byte, 32)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random bytes: %w", err)
+	}
+	return hex.EncodeToString(bytes), nil
 }

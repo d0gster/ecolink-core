@@ -2,15 +2,17 @@ package config
 
 import (
 	"os"
+
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port              string
-	BaseURL           string
-	Database          DatabaseConfig
-	Auth0Domain       string
-	Auth0Audience     string
+	Port          string
+	BaseURL       string
+	FrontendURL   string
+	Database      DatabaseConfig
+	Auth0Domain   string
+	Auth0Audience string
 }
 
 type DatabaseConfig struct {
@@ -21,10 +23,11 @@ type DatabaseConfig struct {
 
 func Load() *Config {
 	godotenv.Load()
-	
+
 	return &Config{
-		Port:    getEnv("PORT", "8080"),
-		BaseURL: getEnv("BASE_URL", "http://localhost:8080"),
+		Port:        getEnv("PORT", "8080"),
+		BaseURL:     getEnv("BASE_URL", "http://localhost:8080"),
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:5173"),
 		Database: DatabaseConfig{
 			Type:        getEnv("DB_TYPE", "memory"),
 			ProjectID:   getEnv("FIRESTORE_PROJECT_ID", ""),
