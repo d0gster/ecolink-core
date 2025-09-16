@@ -1,9 +1,10 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import type { User } from '$lib/stores/auth.ts';
 
 export const isLoading = writable(true);
 export const isAuthenticated = writable(false);
-export const user = writable({});
+export const user = writable<User | null>(null);
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -16,7 +17,7 @@ if (browser && window) {
 export function initGoogleAuth() {
 	if (!browser) return;
 	
-	// Verifica se há usuário salvo
+	// Check if saved user exists
 	const savedUser = localStorage.getItem('ecolink_user');
 	const sessionToken = localStorage.getItem('ecolink_session_token');
 	
@@ -50,7 +51,7 @@ export function login() {
 	window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
 
-export async function handleCallback(code) {
+export async function handleCallback(code: string) {
 	try {
 		const response = await fetch(`${API_URL}/auth/google/callback`, {
 			method: 'POST',
@@ -77,7 +78,7 @@ export async function handleCallback(code) {
 			created_at: data.user.created_at
 		};
 
-		// Salva token de sessão
+		// Save session token
 		localStorage.setItem('ecolink_session_token', data.session_token);
 		localStorage.setItem('ecolink_user', JSON.stringify(userData));
 
@@ -93,11 +94,11 @@ export async function handleCallback(code) {
 
 export function logout() {
 	isAuthenticated.set(false);
-	user.set({});
+	user.set(null);
 	if (browser) {
 		localStorage.removeItem('ecolink_user');
 		localStorage.removeItem('ecolink_session_token');
-		// Redireciona para home após logout
+		// Redirect to home after logout
 		window.location.href = '/';
 	}
 }

@@ -1,18 +1,27 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import type { Link } from '../types/link';
+
+export interface User {
+	id: string;
+	name: string;
+	email: string;
+	picture: string;
+	provider: string;
+}
 
 // Store para dados do usuário
-export const user = writable(null);
+export const user = writable<User | null>(null);
 
 // Store para link pendente (antes do login)
-export const pendingLink = writable(null);
+export const pendingLink = writable<Link | null>(null);
 
 // Funções de autenticação
 export const auth = {
 	// Login com Google OAuth real
-	async loginWithProvider(provider) {
+	async loginWithProvider(provider: string) {
 		if (provider.toLowerCase() === 'google') {
-			const { getGoogleAuthUrl } = await import('$lib/auth/google.js');
+			const { getGoogleAuthUrl } = await import('$lib/auth/google.ts');
 			window.location.href = getGoogleAuthUrl();
 		} else {
 			// Mock para outros provedores
@@ -20,7 +29,7 @@ export const auth = {
 				id: `${provider}_${Date.now()}`,
 				name: `User ${provider}`,
 				email: `user@${provider}.com`,
-				image: `https://ui-avatars.com/api/?name=User+${provider}&background=16a34a&color=fff`,
+				picture: `https://ui-avatars.com/api/?name=User+${provider}&background=16a34a&color=fff`,
 				provider: provider.toLowerCase()
 			};
 			user.set(mockUser);
@@ -37,28 +46,34 @@ export const auth = {
 		pendingLink.set(null);
 		if (browser) {
 			localStorage.removeItem('ecolink_user');
-			// Redireciona para home após logout
+			// Redirect to home after logout
 			window.location.href = '/';
 		}
 	},
 
-	// Salva usuário após OAuth
-	setUser(userData) {
+	// Save user after OAuth
+	setUser(userData: User) {
 		user.set(userData);
 		if (browser) {
 			localStorage.setItem('ecolink_user', JSON.stringify(userData));
 		}
 	},
 
-	// Verifica se está logado
+	// Check if logged
 	checkAuth() {
 		if (browser) {
 			const stored = localStorage.getItem('ecolink_user');
 			if (stored) {
-				user.set(JSON.parse(stored));
-				return true;
+				try {
+					const userData: User = JSON.parse(stored);
+					user.set(userData);
+					return true;
+				} catch (e) {
+					console.error("Error parsing user data from localStorage:", e);
+					localStorage.removeItem('ecolink_user');
+				}
 			}
+			return false;
 		}
-		return false;
 	}
 };

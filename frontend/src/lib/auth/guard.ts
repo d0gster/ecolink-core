@@ -1,23 +1,25 @@
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import { user } from '$lib/stores/auth.js';
+import { user } from '$lib/stores/auth.ts';
+import type { User } from '$lib/stores/auth.ts';
 import { get } from 'svelte/store';
 
-// Verifica se usuário está autenticado
+// Check authenticated user
 export function isAuthenticated() {
 	if (!browser) return false;
 	
-	const currentUser = get(user);
+	const currentUser: User | null = get(user);
 	if (currentUser) return true;
 	
-	// Verifica localStorage
+	// Check localStorage
 	const stored = localStorage.getItem('ecolink_user');
 	if (stored) {
 		try {
-			const userData = JSON.parse(stored);
+			const userData: User = JSON.parse(stored);
 			user.set(userData);
 			return true;
 		} catch (e) {
+			console.error("Error parsing user data from localStorage:", e);
 			localStorage.removeItem('ecolink_user');
 		}
 	}
@@ -34,7 +36,7 @@ export function requireAuth() {
 	return true;
 }
 
-// Redireciona usuário logado para dashboard
+// Redirect logged user to dashboard
 export function redirectIfAuthenticated() {
 	if (isAuthenticated()) {
 		goto('/dashboard');

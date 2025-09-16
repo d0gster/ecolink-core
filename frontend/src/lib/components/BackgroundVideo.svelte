@@ -1,9 +1,9 @@
-<script>
+<script lang="ts">
 	export let desktopSrc = '';
 	export let mobileSrc = '';
 	export let poster = '';
 	
-	let videoElement;
+	let videoElement: HTMLVideoElement;
 	let isMobile = false;
 	
 	// Detecta se é mobile

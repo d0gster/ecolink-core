@@ -1,13 +1,14 @@
-import { createAuth0Client } from '@auth0/auth0-spa-js';
+import { createAuth0Client, Auth0Client } from '@auth0/auth0-spa-js';
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import type { User } from '$lib/stores/auth.ts';
 
 export const isLoading = writable(true);
 export const isAuthenticated = writable(false);
 export const authToken = writable('');
-export const user = writable({});
+export const user = writable<User | null>(null);
 
-let auth0Client;
+let auth0Client: Auth0Client | undefined;
 
 export async function initAuth0() {
 	if (!browser) return;
@@ -25,10 +26,12 @@ export async function initAuth0() {
 	isAuthenticated.set(isAuth);
 
 	if (isAuth) {
-		const userData = await auth0Client.getUser();
-		const token = await auth0Client.getTokenSilently();
+		const userData: User | undefined = await auth0Client.getUser();
+		const token: string = await auth0Client.getTokenSilently();
 		
-		user.set(userData);
+		if (userData) {
+			user.set(userData);
+		}
 		authToken.set(token);
 	}
 
@@ -64,10 +67,12 @@ export async function handleCallback() {
 	isAuthenticated.set(isAuth);
 	
 	if (isAuth) {
-		const userData = await auth0Client.getUser();
-		const token = await auth0Client.getTokenSilently();
+		const userData: User | undefined = await auth0Client.getUser();
+		const token: string = await auth0Client.getTokenSilently();
 		
-		user.set(userData);
+		if (userData) {
+			user.set(userData);
+		}
 		authToken.set(token);
 	}
 }

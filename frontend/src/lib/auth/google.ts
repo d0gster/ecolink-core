@@ -15,7 +15,7 @@ export function getGoogleAuthUrl() {
 	return `https://accounts.google.com/oauth/authorize?${params.toString()}`;
 }
 
-export async function exchangeCodeForTokens(code) {
+export async function exchangeCodeForTokens(code: string): Promise<any> {
 	const response = await fetch('https://oauth2.googleapis.com/token', {
 		method: 'POST',
 		headers: {
@@ -33,7 +33,7 @@ export async function exchangeCodeForTokens(code) {
 	return response.json();
 }
 
-export async function getUserInfo(accessToken) {
+export async function getUserInfo(accessToken: string): Promise<any> {
 	const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
 		headers: {
 			Authorization: `Bearer ${accessToken}`,

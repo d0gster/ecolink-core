@@ -1,5 +1,6 @@
-<script>
-	import { user, isAuthenticated, logout } from '$lib/auth/google-direct.js';
+<script lang="ts">
+	import { getContext } from 'svelte';
+	import { user, isAuthenticated, logout } from '$lib/auth/google-direct.ts';
 	import { goto } from '$app/navigation';
 	
 	let showDropdown = false;
@@ -13,6 +14,12 @@
 		showDropdown = false;
 		goto('/profile');
 	}
+
+	function handleClickOutside(event: MouseEvent) {
+		if (event.target instanceof Element && !event.target.closest('.relative')) {
+			showDropdown = false;
+		}
+	}
 </script>
 
 {#if $isAuthenticated && $user}
@@ -25,7 +32,6 @@
 				src={$user.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent($user.name || $user.email || 'Usuario') + '&background=16a34a&color=fff'}
 				alt={$user.name || 'Usuario'}
 				class="w-8 h-8 rounded-full"
-				onerror="this.src='https://ui-avatars.com/api/?name=Usuario&background=16a34a&color=fff'"
 			/>
 			<span class="hidden md:block font-medium">{$user.name}</span>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,8 +73,4 @@
 {/if}
 
 <!-- Fecha dropdown ao clicar fora -->
-<svelte:window on:click={(e) => {
-	if (!e.target.closest('.relative')) {
-		showDropdown = false;
-	}
-}} />
+<svelte:window on:click={handleClickOutside} />
