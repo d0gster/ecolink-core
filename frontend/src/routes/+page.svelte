@@ -1,5 +1,5 @@
-<script>
-	import { user, isAuthenticated } from '$lib/auth/google-direct.js';
+<script lang="ts">
+	import { user, isAuthenticated } from '$lib/auth/google-direct';
 
 	import { goto } from '$app/navigation';
 	
@@ -19,7 +19,7 @@
 		// Se está logado, cria o link diretamente
 		loading = true;
 		try {
-			const response = await fetch('http://localhost:8080/api/v1/links', {
+			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/links`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -30,15 +30,15 @@
 			
 			if (response.ok) {
 				const result = await response.json();
-				// Salva resultado completo no pendingLink
-				const { pendingLink } = await import('$lib/stores/auth.js');
-				pendingLink.set(result); // Salva resultado completo
+				// Save complete result in pendingLink
+				const { pendingLink } = await import('$lib/stores/auth');
+				pendingLink.set(result); // Save complete result
 				goto('/result');
 			} else {
-				console.error('Erro na API:', response.status);
+				console.error('API Error:', response.status);
 			}
 		} catch (error) {
-			console.error('Erro ao encurtar URL:', error);
+			console.error('Error shortening URL:', error);
 		} finally {
 			loading = false;
 		}
@@ -46,16 +46,16 @@
 </script>
 
 <svelte:head>
-	<title>EcoLink - Encurtador Sustentável</title>
+	<title>EcoLink - Sustainable Shortener</title>
 </svelte:head>
 
 <div class="text-center">
 	<div class="max-w-3xl mx-auto">
 		<h1 class="text-4xl font-bold text-gray-900 mb-4">
-			Encurtamento de Links <span class="text-eco-400">Sustentável</span>
+			Link shortening <span class="text-eco-400">Sustentável</span>
 		</h1>
 		<p class="text-xl text-gray-900 mb-8">
-			Transforme URLs longas em links curtos e ecológicos com QR Code incluído
+			Turn long URLs into short, eco-friendly links with included QR Code
 		</p>
 		
 		<div class="bg-white rounded-xl shadow-lg p-8 mb-8">
@@ -64,7 +64,7 @@
 					<input
 						bind:value={url}
 						type="url"
-						placeholder="Cole sua URL aqui..."
+						placeholder="Paste your URL here..."
 						class="input-eco w-full text-lg"
 						required
 					/>
@@ -74,7 +74,7 @@
 					disabled={loading}
 					class="btn-eco text-lg px-8 py-3 disabled:opacity-50"
 				>
-					{loading ? 'Encurtando...' : '🌱 Encurtar Link'}
+					{loading ? 'Shortening...' : '🌱 Shorten Link'}
 				</button>
 			</form>
 			
@@ -84,18 +84,18 @@
 		<div class="grid md:grid-cols-3 gap-8 text-center">
 			<div class="bg-white p-6 rounded-lg shadow">
 				<div class="text-3xl mb-2">⚡</div>
-				<h3 class="font-semibold mb-2">Ultra Rápido</h3>
-				<p class="text-gray-600">Redirecionamento em milissegundos</p>
+				<h3 class="font-semibold mb-2">Ultra Fast</h3>
+				<p class="text-gray-600">Redirection in milliseconds</p>
 			</div>
 			<div class="bg-white p-6 rounded-lg shadow">
 				<div class="text-3xl mb-2">🌱</div>
-				<h3 class="font-semibold mb-2">Sustentável</h3>
-				<p class="text-gray-600">Infraestrutura eco-friendly</p>
+				<h3 class="font-semibold mb-2">Sustainable</h3>
+				<p class="text-gray-600">Eco-friendly Infraestructure</p>
 			</div>
 			<div class="bg-white p-6 rounded-lg shadow">
 				<div class="text-3xl mb-2">📊</div>
 				<h3 class="font-semibold mb-2">Analytics</h3>
-				<p class="text-gray-600">Métricas detalhadas</p>
+				<p class="text-gray-600">Detailed metrics</p>
 			</div>
 		</div>
 	</div>

@@ -1,12 +1,13 @@
-<script>
-	import { login, isAuthenticated } from '$lib/auth/google-direct.js';
+<script lang="ts">
+	import { login, isAuthenticated } from '$lib/auth/google-direct.ts';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import type { Provider } from '$lib/types/provider.ts';
 
 	let loading = false;
 
 	onMount(() => {
-		// Redireciona se já estiver logado
+		// Redirects if already logged in
 		if ($isAuthenticated) {
 			goto('/dashboard');
 		}
@@ -19,9 +20,9 @@
 		{ name: 'GitHub', icon: '🐙', color: 'bg-gray-800 hover:bg-gray-900', functional: false }
 	];
 
-	async function loginWith(provider) {
+	async function loginWith(provider: Provider) {
 		if (!provider.functional) {
-			alert(`Login com ${provider.name} será implementado em breve!`);
+			alert(`Login with ${provider.name} will be implemented soon!`);
 			return;
 		}
 		
@@ -29,7 +30,7 @@
 		try {
 			await login();
 		} catch (error) {
-			console.error('Erro no login:', error);
+			console.error('Login error:', error);
 			loading = false;
 		}
 	}
@@ -43,8 +44,8 @@
 	<div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
 		<div class="text-center mb-8">
 			<div class="text-4xl mb-4">🌱</div>
-			<h1 class="text-2xl font-bold text-gray-900 mb-2">Entre no EcoLink</h1>
-			<p class="text-gray-600">Faça login para acessar seus links sustentáveis</p>
+			<h1 class="text-2xl font-bold text-gray-900 mb-2">Enter EcoLink</h1>
+<p class="text-gray-600">Log in to access your sustainable links</p>
 		</div>
 
 		<div class="space-y-3">
@@ -56,18 +57,18 @@
 				>
 					<span class="text-xl">{provider.icon}</span>
 					<span>
-						{loading && provider.functional ? 'Redirecionando...' : `Continuar com ${provider.name}`}
-						{!provider.functional ? ' (Em breve)' : ''}
+						{loading && provider.functional ? 'Redirecting...' : `Continue with ${provider.name}`}
+						{!provider.functional ? ' (Soon)' : ''}
 					</span>
 				</button>
 			{/each}
 		</div>
 
 		<div class="mt-8 text-center text-sm text-gray-500">
-			<p>Ao continuar, você concorda com nossos</p>
+			<p>By continuing, you agree to our</p>
 			<p>
-				<a href="#" class="text-eco-600 hover:text-eco-700">Termos de Uso</a> e 
-				<a href="#" class="text-eco-600 hover:text-eco-700">Política de Privacidade</a>
+				<a href="/terms" class="text-eco-600 hover:text-eco-700">Terms of Use</a> and
+				<a href="/privacy" class="text-eco-600 hover:text-eco-700">Privacy Policy</a>
 			</p>
 		</div>
 	</div>

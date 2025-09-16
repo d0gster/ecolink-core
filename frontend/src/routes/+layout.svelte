@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
 	import '../app.css';
-	import BackgroundVideo from '$lib/BackgroundVideo.svelte';
-	import UserDropdown from '$lib/UserDropdown.svelte';
-	import { initGoogleAuth } from '$lib/auth/google-direct.js';
+	import BackgroundVideo from '$lib/components/BackgroundVideo.svelte';
+	import UserDropdown from '$lib/components/UserDropdown.svelte';
+	import { initGoogleAuth } from '$lib/auth/google-direct.ts';
 	import { onMount } from 'svelte';
 
 	onMount(() => {
