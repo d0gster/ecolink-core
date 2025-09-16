@@ -1,233 +1,302 @@
 # 📋 Changelog - EcoLink Core
 
-Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
+All notable changes to this project will be documented in this file.
 
-O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.3.2] - 2024-01-30 - Google OAuth & UX Improvements
+## [v0.3.4] - 2025-09-12 - TypeScript Migration & Architecture Refinement
 
-### ✨ Adicionado
-- **Google OAuth 2.0**: Implementação manual completa seguindo RFC 6749
-- **Session Management**: Sistema robusto de gerenciamento de sessão
-- **QR Code Display**: Correção na exibição de QR Codes na página de resultado
-- **Route Protection**: Sistema de proteção de rotas com redirecionamentos inteligentes
-- **Link Deduplication**: Prevenção de criação de links duplicados para o mesmo usuário
+### 📝 Commits Included
+- `8d63931` - chore: update SvelteKit generated files
+- `cecb265` - chore: update build configurations and dependencies  
+- `f664f4a` - refactor: update Svelte components with TypeScript integration
+- `e30b8e7` - refactor: standardize backend JSON tags and improve CORS security
+- `ca3d715` - feat: migrate frontend to TypeScript and reorganize structure
 
-### 🔧 Melhorado
-- **Authentication Flow**: Fluxo OAuth completo com callback handling
-- **Session Persistence**: Verificação de sessão entre reloads de página
-- **Error Handling**: Tratamento robusto de erros em autenticação
-- **State Management**: Stores reativos para gerenciamento de estado global
-- **Logout Redirection**: Redirecionamento automático após logout
+### ✨ Added
+- **Complete TypeScript Migration**: Migrated entire frontend from JavaScript to TypeScript for enhanced type safety
+- **Organized Library Structure**: Restructured `frontend/src/lib/` with dedicated directories (components/, services/, types/, utils/)
+- **Type-Safe Interfaces**: Created comprehensive TypeScript interfaces for Link, User, and API responses
+- **Global Type Declarations**: Added `frontend/src/app.d.ts` for centralized type definitions
+- **Enhanced Error Handling**: Improved error handling with type-safe error responses
+
+### 🔧 Improved
+- **Frontend-Backend Alignment**: Standardized all data structures to use camelCase consistently
+- **Code Organization**: Moved components to dedicated `components/` directory
+- **API Services**: Centralized API calls in `services/` directory with proper TypeScript typing
+- **Authentication Flow**: Enhanced OAuth implementation with TypeScript interfaces
+- **Link Deduplication**: Improved logic to prevent duplicate links per user
+- **QR Code Generation**: Enhanced QR code generation with proper base64 encoding
+
+### 🐛 Fixed
+- **Type Safety Issues**: Resolved all TypeScript compilation errors
+- **Import Path Consistency**: Updated all import paths to reflect new directory structure
+- **Interface Mismatches**: Aligned frontend interfaces with backend JSON responses
+- **Build Configuration**: Updated TypeScript and Svelte configurations for optimal compilation
+
+---
+
+## [v0.3.3] - 2025-08-30 - Standardization & Refactoring
+
+### ✨ Added
+- **Frontend Structure**: Introduced dedicated directories for `components`, `services`, `utils` within `frontend/src/lib` for better organization.
+- **Global Types**: Created `frontend/src/app.d.ts` to centralize global TypeScript type declarations and Svelte/Vite references.
+
+### 🔧 Improved
+- **Frontend Type Consistency**: Standardized `Link` and `Result` interfaces to use `camelCase` naming conventions across the frontend (`frontend/src/lib/types/link.ts`, `frontend/src/lib/types/result.ts`).
+- **Backend API Consistency**: Aligned JSON and Firestore tags in `backend/internal/models/link.go` and `backend/internal/models/user.go` to `camelCase` for seamless integration with the frontend.
+- **Authentication Handler**: Updated JSON tags in `GoogleTokenResponse` and `GoogleCallback` request/response in `backend/internal/handlers/auth_handler.go` to `camelCase`.
+- **CORS Security**: Refactored `CORSMiddleware` in `backend/cmd/main.go` to use a configurable `FrontendURL` from `backend/internal/config/config.go`, enhancing security by restricting access to a specific origin.
+- **Environment Configuration**: Added `FrontendURL` to `backend/internal/config/config.go` and configured `VITE_API_URL` in `docker/Dockerfile.frontend` for consistent environment variable management.
+- **Documentation Accuracy**: Updated `README.md` to reflect current frontend code standards (TypeScript/Svelte) and corrected the Google OAuth redirect URI to `http://localhost:5173`.
+
+### 🐛 Fixed
+- **TypeScript Errors**: Resolved `importsNotUsedAsValues` and `preserveValueImports` issues in `frontend/.svelte-kit/tsconfig.json` and added `svelte` to `compilerOptions.types` in `frontend/tsconfig.json`.
+- **Linter Errors**: Eliminated `svelteHTML` errors, `Link` interface property mismatches, and unused imports by refactoring frontend Svelte files (`+layout.svelte`, `+page.svelte`, `result/+page.svelte`, `dashboard/+page.svelte`, `auth/callback/google/+page.svelte`).
+
+---
+
+## [v0.3.2] - 2025-08-30 - Google OAuth & UX Improvements
+
+### 📝 Commits Included
+- `2e13e20` - feat: implement Google OAuth 2.0 and UX improvements (v0.3.2)
+
+### ✨ Added
+- **Google OAuth 2.0**: Complete manual implementation following RFC 6749
+- **Session Management**: Robust session management system
+- **QR Code Display**: Fixed QR Code display on result page
+- **Route Protection**: Route protection system with intelligent redirects
+- **Link Deduplication**: Prevention of duplicate link creation for same user
+
+### 🔧 Improved
+- **Authentication Flow**: Complete OAuth flow with callback handling
+- **Session Persistence**: Session validation between page reloads
+- **Error Handling**: Robust error handling in authentication
+- **State Management**: Reactive stores for global state management
+- **Logout Redirection**: Automatic redirection after logout
 
 ### 🎨 Frontend Improvements
-- **Auth Guard System**: Middleware de proteção de rotas
-- **Pending Link Storage**: Sistema para preservar links durante login
-- **User Dropdown**: Componente completo com menu de usuário
-- **Background Video**: Elemento visual responsivo eco-friendly
-- **Responsive Design**: Melhorias na responsividade mobile
+- **Auth Guard System**: Route protection middleware
+- **Pending Link Storage**: System to preserve links during login
+- **User Dropdown**: Complete component with user menu
+- **Background Video**: Responsive eco-friendly visual element
+- **Responsive Design**: Mobile responsiveness improvements
 
 ### 🛠️ Backend Enhancements
-- **Duplicate Prevention**: Verificação de URLs existentes por usuário
-- **QR Code Generation**: Geração consistente de QR Codes
-- **User Management**: Sistema completo de usuários com Google
-- **Database Interface**: Abstração para múltiplos adapters
-- **CORS Configuration**: Configuração adequada para desenvolvimento
+- **Duplicate Prevention**: Existing URL verification per user
+- **QR Code Generation**: Consistent QR Code generation
+- **User Management**: Complete user system with Google
+- **Database Interface**: Abstraction for multiple adapters
+- **CORS Configuration**: Proper configuration for development
 
-### 🐛 Corrigido
-- **QR Code Display**: Correção na exibição de QR Codes
-- **Session Validation**: Verificação correta de sessões ativas
-- **Callback Processing**: Melhoria no processamento de callbacks OAuth
-- **Route Navigation**: Correção em redirecionamentos de páginas protegidas
-- **Data Persistence**: Correção na persistência de dados entre navegação
+### 🐛 Fixed
+- **QR Code Display**: Fixed QR Code display
+- **Session Validation**: Correct active session verification
+- **Callback Processing**: Improved OAuth callback processing
+- **Route Navigation**: Fixed protected page redirections
+- **Data Persistence**: Fixed data persistence between navigation
 
-### 📚 Documentação
-- **ARCHITECTURE.md**: Documentação completa da arquitetura Clean
-- **GOOGLE_OAUTH_SETUP.md**: Guia detalhado de configuração OAuth
-- **README.md**: Instruções atualizadas com novos recursos
-- **ROADMAP.md**: Planejamento técnico detalhado
-
----
-
-## [v0.3.1] - 2024-01-30 - Qualidade e Documentação
-
-### ✨ Adicionado
-- **Documentação Completa**: README, ROADMAP e CHANGELOG atualizados seguindo padrões de mercado
-- **Análise de Qualidade**: Code review completo seguindo princípios Clean Code
-- **Métricas de Performance**: Benchmarks e indicadores de qualidade
-- **Status Badges**: Indicadores visuais de build, qualidade e cobertura
-
-### 🔧 Melhorado
-- **Error Handling**: Tratamento robusto de erros em todas as camadas
-- **Code Organization**: Refatoração seguindo princípios SOLID
-- **Documentation**: Comentários e documentação inline melhorados
-- **Type Safety**: Tipagem mais rigorosa no frontend TypeScript
-
-### 🐛 Corrigido
-- **OAuth Callback**: Correção na URL de redirecionamento dinâmica
-- **Environment Variables**: Carregamento correto das variáveis VITE_
-- **Session Persistence**: Melhoria na persistência de sessão do usuário
-- **CORS Configuration**: Ajustes para desenvolvimento e produção
+### 📚 Documentation
+- **ARCHITECTURE.md**: Complete Clean Architecture documentation
+- **GOOGLE_OAUTH_SETUP.md**: Detailed OAuth configuration guide
+- **README.md**: Updated instructions with new features
+- **ROADMAP.md**: Detailed technical planning
 
 ---
 
-## [v0.3.0] - 2024-01-29 - Autenticação Google OAuth
+## [v0.3.1] - 2025-08-30 - Quality and Documentation
 
-### ✨ Adicionado
-- **Google OAuth 2.0**: Implementação manual completa seguindo RFC 6749
-- **JWT Middleware**: Sistema de autenticação baseado em tokens
-- **Session Management**: Gerenciamento de sessão com localStorage
-- **Security Headers**: Configuração de CORS e headers de segurança
-- **User Management**: Sistema completo de usuários com Google
+### ✨ Added
+- **Complete Documentation**: README, ROADMAP and CHANGELOG updated following market standards
+- **Quality Analysis**: Complete code review following Clean Code principles
+- **Performance Metrics**: Benchmarks and quality indicators
+- **Status Badges**: Visual indicators for build, quality and coverage
 
-### 🔧 Melhorado
-- **Authentication Flow**: Fluxo completo de login/logout
-- **Error Handling**: Tratamento específico para erros de OAuth
-- **User Experience**: Feedback visual durante processo de autenticação
-- **Code Structure**: Separação clara entre auth e business logic
+### 🔧 Improved
+- **Error Handling**: Robust error handling across all layers
+- **Code Organization**: Refactoring following SOLID principles
+- **Documentation**: Improved inline comments and documentation
+- **Type Safety**: Stricter typing in frontend TypeScript
 
-### 🛠️ Técnico
+### 🐛 Fixed
+- **OAuth Callback**: Fixed dynamic redirect URL
+- **Environment Variables**: Correct loading of VITE_ variables
+- **Session Persistence**: Improved user session persistence
+- **CORS Configuration**: Adjustments for development and production
+
+---
+
+## [v0.3.0] - 2025-08-29 - Google OAuth Authentication
+
+### ✨ Added
+- **Google OAuth 2.0**: Complete manual implementation following RFC 6749
+- **JWT Middleware**: Token-based authentication system
+- **Session Management**: Session management with localStorage
+- **Security Headers**: CORS and security headers configuration
+- **User Management**: Complete user system with Google
+
+### 🔧 Improved
+- **Authentication Flow**: Complete login/logout flow
+- **Error Handling**: Specific handling for OAuth errors
+- **User Experience**: Visual feedback during authentication process
+- **Code Structure**: Clear separation between auth and business logic
+
+### 🛠️ Technical
 - **OAuth Implementation**: 
   - Authorization Code Flow
-  - Token exchange seguro
+  - Secure token exchange
   - User info retrieval
-  - Callback handling robusto
+  - Robust callback handling
 - **Security Features**:
   - CSRF protection
   - Secure token storage
   - Session validation
-  - Logout seguro
+  - Secure logout
 
-### 📚 Documentação
-- **GOOGLE_OAUTH_SETUP.md**: Guia completo de configuração
-- **Environment Setup**: Instruções detalhadas de .env
-- **API Documentation**: Endpoints de autenticação documentados
+### 📚 Documentation
+- **GOOGLE_OAUTH_SETUP.md**: Complete configuration guide
+- **Environment Setup**: Detailed .env instructions
+- **API Documentation**: Documented authentication endpoints
 
 ---
 
-## [v0.2.0] - 2024-01-28 - Infraestrutura e DevOps
+## [v0.2.0] - 2025-08-28 - Infrastructure and DevOps
 
-### ✨ Adicionado
-- **Docker Multi-stage**: Builds otimizados para produção
-- **Docker Compose**: Orquestração completa do ambiente
-- **Makefile**: Comandos padronizados para desenvolvimento
-- **Environment Configuration**: Sistema centralizado de configuração
-- **Health Checks**: Endpoints de monitoramento
+### 📝 Commits Included
+- `8c14e6e` - Refatoração (docker): simplificando setup desenvolvimento
+- `039113e` - Dockerização e deploy configs
+- `9b0117f` - Arquivos de configuração adicionais
 
-### 🔧 Melhorado
-- **Build Process**: Otimização de builds e redução de tamanho
-- **Development Workflow**: Scripts automatizados para desenvolvimento
-- **Logging**: Sistema estruturado de logs
-- **Performance**: Otimizações de runtime e startup
+### ✨ Added
+- **Docker Multi-stage**: Production-optimized builds
+- **Docker Compose**: Complete environment orchestration
+- **Makefile**: Standardized development commands
+- **Environment Configuration**: Centralized configuration system
+- **Health Checks**: Monitoring endpoints
+
+### 🔧 Improved
+- **Build Process**: Build optimization and size reduction
+- **Development Workflow**: Automated development scripts
+- **Logging**: Structured logging system
+- **Performance**: Runtime and startup optimizations
 
 ### 🛠️ DevOps
-- **Containerização**:
+- **Containerization**:
   - Backend: Alpine Linux multi-stage
-  - Frontend: Node.js otimizado
-  - Volumes persistentes
+  - Frontend: Optimized Node.js
+  - Persistent volumes
   - Network isolation
-- **Automação**:
-  - Scripts de inicialização
-  - Health checks automatizados
+- **Automation**:
+  - Initialization scripts
+  - Automated health checks
   - Environment validation
   - Cleanup procedures
 
 ---
 
-## [v0.1.1] - 2024-01-27 - Frontend SvelteKit e UX
+## [v0.1.1] - 2025-08-27 - Frontend SvelteKit and UX
 
-### ✨ Adicionado
-- **SvelteKit Framework**: SSR/SSG com TypeScript
-- **Design System**: TailwindCSS com tema eco-friendly personalizado
-- **Componentes Reativos**: Sistema de stores para estado global
-- **Interface Responsiva**: Mobile-first design
-- **Background Video**: Elemento visual eco-friendly responsivo
+### 📝 Commits Included
+- `37ba411` - Layout página inicial e dashboard
+- `b8ff56c` - Setup SvelteKit e estrutura base
+
+### ✨ Added
+- **SvelteKit Framework**: SSR/SSG with TypeScript
+- **Design System**: TailwindCSS with custom eco-friendly theme
+- **Reactive Components**: Store system for global state
+- **Responsive Interface**: Mobile-first design
+- **Background Video**: Responsive eco-friendly visual element
 
 ### 🎨 Interface
-- **Páginas Implementadas**:
-  - Homepage com formulário de encurtamento
-  - Dashboard de links do usuário
-  - Página de resultado com QR Code
-  - Páginas de autenticação
-  - Perfil do usuário
-- **Componentes**:
-  - UserDropdown com menu contextual
-  - BackgroundVideo responsivo
-  - Formulários com validação
-  - Loading states e feedback visual
+- **Implemented Pages**:
+  - Homepage with shortening form
+  - User links dashboard
+  - Result page with QR Code
+  - Authentication pages
+  - User profile
+- **Components**:
+  - UserDropdown with contextual menu
+  - Responsive BackgroundVideo
+  - Forms with validation
+  - Loading states and visual feedback
 
-### 🔧 Melhorado
-- **User Experience**: Fluxo intuitivo e feedback visual
-- **Performance**: Lazy loading e otimizações de bundle
-- **Accessibility**: Padrões WCAG básicos implementados
-- **Responsive Design**: Adaptação para todos os dispositivos
+### 🔧 Improved
+- **User Experience**: Intuitive flow and visual feedback
+- **Performance**: Lazy loading and bundle optimizations
+- **Accessibility**: Basic WCAG standards implemented
+- **Responsive Design**: Adaptation for all devices
 
 ---
 
-## [v0.1.0] - 2024-01-26 - Core Backend e Arquitetura
+## [v0.1.0] - 2025-08-26 - Core Backend and Architecture
 
-### ✨ Adicionado
-- **Clean Architecture**: Implementação hexagonal com interfaces
-- **Go Backend**: API RESTful com Gin Framework
-- **Database Interface**: Abstração para múltiplos adapters
-- **URL Shortening**: Algoritmo hash único para códigos curtos
-- **QR Code Generation**: Geração nativa de alta qualidade
-- **Click Tracking**: Sistema básico de métricas
+### 📝 Commits Included
+- `b039c17` - Backend Go com Gin - API básica de encurtamento
+- `170c745` - Estrutura de pastas e configuração inicial
+- `c4be326` - Initial commit
 
-### 🏗️ Arquitetura
-- **Camadas Implementadas**:
-  - **Domain**: Models e interfaces de negócio
-  - **Application**: Services e casos de uso
-  - **Infrastructure**: Handlers, middleware e adapters
-  - **Presentation**: API REST com Gin
-- **Patterns Aplicados**:
+### ✨ Added
+- **Clean Architecture**: Hexagonal implementation with interfaces
+- **Go Backend**: RESTful API with Gin Framework
+- **Database Interface**: Abstraction for multiple adapters
+- **URL Shortening**: Unique hash algorithm for short codes
+- **QR Code Generation**: High-quality native generation
+- **Click Tracking**: Basic metrics system
+
+### 🏗️ Architecture
+- **Implemented Layers**:
+  - **Domain**: Business models and interfaces
+  - **Application**: Services and use cases
+  - **Infrastructure**: Handlers, middleware and adapters
+  - **Presentation**: REST API with Gin
+- **Applied Patterns**:
   - Repository Pattern
   - Dependency Injection
   - Interface Segregation
   - Single Responsibility
 
-### 🛠️ Funcionalidades Core
+### 🛠️ Core Features
 - **Link Management**:
-  - Criação de links encurtados
-  - Redirecionamento com tracking
-  - Listagem por usuário
-  - Deleção de links
+  - Shortened link creation
+  - Redirection with tracking
+  - User listing
+  - Link deletion
 - **QR Codes**:
-  - Geração automática
-  - Múltiplos formatos
-  - Otimização de tamanho
+  - Automatic generation
+  - Multiple formats
+  - Size optimization
 - **Database**:
-  - Interface abstrata
-  - Implementação em memória
-  - Preparado para Firestore
+  - Abstract interface
+  - In-memory implementation
+  - Firestore ready
 
-### 📊 Métricas
+### 📊 Metrics
 - **Performance**: Response time < 100ms
-- **Reliability**: Error handling robusto
-- **Scalability**: Arquitetura preparada para escala
-- **Maintainability**: Código limpo e testável
+- **Reliability**: Robust error handling
+- **Scalability**: Architecture prepared for scale
+- **Maintainability**: Clean and testable code
 
 ---
 
-## 🔄 Versionamento
+## 🔄 Versioning
 
 ### Semantic Versioning
-- **MAJOR**: Mudanças incompatíveis na API
-- **MINOR**: Funcionalidades adicionadas de forma compatível
-- **PATCH**: Correções de bugs compatíveis
+- **MAJOR**: Incompatible API changes
+- **MINOR**: Backward compatible functionality additions
+- **PATCH**: Backward compatible bug fixes
 
-### Convenções de Commit
-- **feat**: Nova funcionalidade
-- **fix**: Correção de bug
-- **docs**: Mudanças na documentação
-- **style**: Formatação, sem mudança de código
-- **refactor**: Refatoração de código
-- **test**: Adição ou correção de testes
-- **chore**: Mudanças em ferramentas e configurações
+### Commit Conventions
+- **feat**: New feature
+- **fix**: Bug fix
+- **docs**: Documentation changes
+- **style**: Formatting, no code change
+- **refactor**: Code refactoring
+- **test**: Adding or correcting tests
+- **chore**: Changes to tools and configurations
 
 ---
 
-**Mantido por**: Danilo Monteiro  
-**Padrões**: Clean Code, SOLID, Clean Architecture  
-**Qualidade**: Code Review, Testing, Documentation
+**Maintained by**: Danilo Monteiro  
+**Standards**: Clean Code, SOLID, Clean Architecture  
+**Quality**: Code Review, Testing, Documentation
