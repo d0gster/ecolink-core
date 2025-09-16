@@ -18,7 +18,7 @@
 		// Get result from pendingLink or URL
 		const pending = $pendingLink;
 		if (pending) {
-			result = { shortUrl: pending.shortCode, qrCode: pending.qrCode };
+			result = { shortUrl: pending.shortUrl, qrCode: pending.qrCode };
 			pendingLink.set(null); // Clear after use
 			loading = false;
 		} else {

@@ -32,6 +32,8 @@
 				src={$user.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent($user.name || $user.email || 'Usuario') + '&background=16a34a&color=fff'}
 				alt={$user.name || 'Usuario'}
 				class="w-8 h-8 rounded-full"
+				referrerpolicy="no-referrer"
+				crossorigin="anonymous"
 			/>
 			<span class="hidden md:block font-medium">{$user.name}</span>
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
