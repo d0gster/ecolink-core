@@ -21,10 +21,10 @@ type AuthHandler struct {
 }
 
 type GoogleTokenResponse struct {
-	AccessToken string `json:"accessToken"`
-	TokenType   string `json:"tokenType"`
-	ExpiresIn   int    `json:"expiresIn"`
-	IDToken     string `json:"idToken"`
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresIn   int    `json:"expires_in"`
+	IDToken     string `json:"id_token"`
 }
 
 type GoogleUserInfo struct {
@@ -45,7 +45,7 @@ func NewAuthHandler(clientID, clientSecret string, userService *services.UserSer
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	var req struct {
 		Code        string `json:"code" binding:"required"`
-		RedirectURI string `json:"redirectUri" binding:"required"`
+		RedirectURI string `json:"redirect_uri" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {

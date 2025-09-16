@@ -79,7 +79,7 @@ export async function handleCallback(code: string) {
 		};
 
 		// Save session token
-		localStorage.setItem('ecolink_session_token', data.session_token);
+		localStorage.setItem('ecolink_session_token', data.sessionToken);
 		localStorage.setItem('ecolink_user', JSON.stringify(userData));
 
 		user.set(userData);
