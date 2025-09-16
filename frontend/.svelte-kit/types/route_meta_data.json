@@ -1,24 +1,9 @@
 {
-	"/": [
-		"src/routes/+layout.server.js",
-		"src/routes/+layout.server.js"
-	],
-	"/auth": [
-		"src/routes/+layout.server.js"
-	],
-	"/auth/callback": [
-		"src/routes/+layout.server.js"
-	],
-	"/auth/callback/google": [
-		"src/routes/+layout.server.js"
-	],
-	"/dashboard": [
-		"src/routes/+layout.server.js"
-	],
-	"/profile": [
-		"src/routes/+layout.server.js"
-	],
-	"/result": [
-		"src/routes/+layout.server.js"
-	]
+	"/": [],
+	"/auth": [],
+	"/auth/callback": [],
+	"/auth/callback/google": [],
+	"/dashboard": [],
+	"/profile": [],
+	"/result": []
 }
