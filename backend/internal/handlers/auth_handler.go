@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"crypto/rand"
+	"ecolink-core/internal/config"
+	"ecolink-core/internal/security"
 	"ecolink-core/internal/services"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,9 +15,9 @@ import (
 )
 
 type AuthHandler struct {
-	googleClientID     string
-	googleClientSecret string
-	userService        *services.UserService
+	userService *services.UserService
+	jwtService  *security.JWTService
+	cfg         *config.Config
 }
 
 type GoogleTokenResponse struct {
@@ -34,11 +34,11 @@ type GoogleUserInfo struct {
 	Picture string `json:"picture"`
 }
 
-func NewAuthHandler(clientID, clientSecret string, userService *services.UserService) *AuthHandler {
+func NewAuthHandler(cfg *config.Config, userService *services.UserService, jwtService *security.JWTService) *AuthHandler {
 	return &AuthHandler{
-		googleClientID:     clientID,
-		googleClientSecret: clientSecret,
-		userService:        userService,
+		userService: userService,
+		jwtService:  jwtService,
+		cfg:         cfg,
 	}
 }
 
@@ -46,6 +46,7 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	var req struct {
 		Code        string `json:"code" binding:"required"`
 		RedirectURI string `json:"redirect_uri" binding:"required"`
+		State       string `json:"state,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -84,22 +85,43 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	}
 
 	// Generate JWT token
-	sessionToken, err := h.generateSessionToken()
+	jwtToken, err := h.jwtService.GenerateToken(user.ID, user.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate session token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
+	// Set cookie attributes from config and environment
+	domain := h.cfg.Cookie.Domain
+	secure := h.cfg.Cookie.Secure
+
+	// Parse SameSite option
+	sameSite := h.getSameSiteMode()
+
+	// Use gin's SetCookie (which doesn't accept SameSite) so we set header directly for SameSite
+	cookie := &http.Cookie{
+		Name:     "ecolink_token",
+		Value:    jwtToken,
+		Path:     "/",
+		Domain:   domain,
+		MaxAge:   3600 * 24 * 30,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+	}
+
+	http.SetCookie(c.Writer, cookie)
+
 	c.JSON(http.StatusOK, gin.H{
-		"user":         user,
-		"sessionToken": sessionToken,
+		"user":  user,
+		"state": req.State,
 	})
 }
 
 func (h *AuthHandler) exchangeCodeForToken(code, redirectURI string) (*GoogleTokenResponse, error) {
 	data := url.Values{}
-	data.Set("client_id", h.googleClientID)
-	data.Set("client_secret", h.googleClientSecret)
+	data.Set("client_id", h.cfg.GoogleAuth.ClientID)
+	data.Set("client_secret", h.cfg.GoogleAuth.ClientSecret)
 	data.Set("code", code)
 	data.Set("grant_type", "authorization_code")
 	data.Set("redirect_uri", redirectURI)
@@ -163,11 +185,48 @@ func (h *AuthHandler) getUserInfo(accessToken string) (*GoogleUserInfo, error) {
 	return &userInfo, nil
 }
 
-func (h *AuthHandler) generateSessionToken() (string, error) {
-	bytes := make([]byte, 32)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate random bytes: %w", err)
+func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
 	}
-	return hex.EncodeToString(bytes), nil
+
+	user, err := h.userService.GetUser(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	// Use config values for cookie clearing
+	domain := h.cfg.Cookie.Domain
+	secure := h.cfg.Cookie.Secure
+
+	cookie := &http.Cookie{
+		Name:     "ecolink_token",
+		Value:    "",
+		Path:     "/",
+		Domain:   domain,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: h.getSameSiteMode(),
+	}
+	http.SetCookie(c.Writer, cookie)
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+func (h *AuthHandler) getSameSiteMode() http.SameSite {
+	switch h.cfg.Cookie.SameSite {
+	case "strict":
+		return http.SameSiteStrictMode
+	case "none":
+		return http.SameSiteNoneMode
+	default:
+		return http.SameSiteLaxMode
+	}
 }

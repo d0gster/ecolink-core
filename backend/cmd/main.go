@@ -1,111 +1,68 @@
 package main
 
 import (
+	"context"
+	"ecolink-core/internal/bootstrap"
 	"ecolink-core/internal/config"
-	"ecolink-core/internal/handlers"
-	"ecolink-core/internal/middleware"
-	"ecolink-core/internal/services"
-	"ecolink-core/pkg/database"
 	"log"
+	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found, using system variables")
+	// 1. Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("❌ Failed to load configuration: %v", err)
 	}
 
-	cfg := config.Load()
+	// 2. Establish database connection
+	db, err := bootstrap.NewDBConnection(cfg)
+	if err != nil {
+		log.Fatalf("❌ Failed to connect to database: %v", err)
+	}
 
-	// Initialize database
-	var db database.Database
-	if cfg.Database.Type == "firestore" && cfg.Database.ProjectID != "" {
-		firestoreDB, err := database.NewFirestoreDB(cfg.Database.ProjectID, cfg.Database.Credentials)
-		if err != nil {
-			log.Printf("Error connecting to Firestore: %v. Using memory.", err)
-			db = database.NewMemoryDB()
-		} else {
-			db = firestoreDB
-			log.Println("✅ Firestore connected")
+	// 3. Initialize application with dependency injection
+	app := bootstrap.NewApplication(cfg, db)
+	router := app.Router
+
+	// 4. Configure HTTP server
+	srv := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// 5. Start server in goroutine
+	go func() {
+		log.Printf("🌱 EcoLink Core starting on port %s", cfg.Port)
+		log.Printf("🔒 Security: JWT=%t, CSRF=%t", len(cfg.Security.JWTSecret) >= 32, len(cfg.Security.CSRFSecret) >= 32)
+		log.Printf("🗄️  Database: %s", cfg.Database.Type)
+		log.Printf("🌐 Frontend: %s", cfg.FrontendURL)
+		
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("❌ Server failed to start: %v", err)
 		}
+	}()
+
+	// 6. Wait for interrupt signal to gracefully shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("🛑 Shutting down server...")
+
+	// 7. Graceful shutdown with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("❌ Server forced to shutdown: %v", err)
 	} else {
-		db = database.NewMemoryDB()
-		log.Println("⚠️  Using in-memory database")
-	}
-
-	// Initialize services
-	linkService := services.NewLinkService(db, cfg.BaseURL)
-	userService := services.NewUserService(db)
-
-	// Initialize handlers
-	linkHandler := handlers.NewLinkHandler(linkService)
-	userHandler := handlers.NewUserHandler(userService)
-
-	googleClientID, ok := os.LookupEnv("GOOGLE_CLIENT_ID")
-	if !ok || googleClientID == "" {
-		log.Fatal("GOOGLE_CLIENT_ID not set")
-	}
-
-	googleClientSecret, ok := os.LookupEnv("GOOGLE_CLIENT_SECRET")
-	if !ok || googleClientSecret == "" {
-		log.Fatal("GOOGLE_CLIENT_SECRET not set")
-	}
-
-	authHandler := handlers.NewAuthHandler(
-		googleClientID,
-		googleClientSecret,
-		userService,
-	)
-
-	// Setup router
-	r := gin.Default()
-
-	// CORS middleware
-	r.Use(CORSMiddleware(cfg.FrontendURL))
-
-	// Public routes
-	r.GET("/:code", linkHandler.RedirectLink)
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok", "service": "ecolink-core"})
-	})
-
-	// Auth routes
-	r.POST("/auth/google/callback", authHandler.GoogleCallback)
-
-	// Protected API routes
-	api := r.Group("/api/v1")
-	if cfg.Auth0Domain != "" && cfg.Auth0Audience != "" {
-		api.Use(middleware.AuthMiddleware(cfg.Auth0Domain, cfg.Auth0Audience))
-		log.Println("✅ Auth0 middleware active")
-	} else {
-		log.Println("⚠️  Auth0 not configured - unprotected routes")
-	}
-
-	api.POST("/links", linkHandler.CreateLink)
-	api.GET("/links", linkHandler.GetUserLinks)
-	api.DELETE("/links/:code", linkHandler.DeleteLink)
-	api.GET("/profile", userHandler.GetProfile)
-
-	log.Printf("🌱 EcoLink Core running on port %s", cfg.Port)
-	log.Fatal(r.Run(":" + cfg.Port))
-}
-
-// CORSMiddleware handles Cross-Origin Resource Sharing
-func CORSMiddleware(frontendURL string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", frontendURL)
-		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-User-ID")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
+		log.Println("✅ Server exited gracefully")
 	}
 }

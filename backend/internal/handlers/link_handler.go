@@ -25,15 +25,16 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	// Para demo, usa userID fixo. Na versão completa, vem do JWT
-	userID := c.GetHeader("X-User-ID")
-	if userID == "" {
-		userID = "demo-user"
+	// Get user ID from middleware context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
 	}
 
-	response, err := h.linkService.CreateLink(req.URL, userID)
+	response, err := h.linkService.CreateLink(req.URL, userID.(string))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 		return
 	}
 
@@ -53,14 +54,16 @@ func (h *LinkHandler) RedirectLink(c *gin.Context) {
 }
 
 func (h *LinkHandler) GetUserLinks(c *gin.Context) {
-	userID := c.GetHeader("X-User-ID")
-	if userID == "" {
-		userID = "demo-user"
+	// Get user ID from middleware context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
 	}
 
-	links, err := h.linkService.GetUserLinks(userID)
+	links, err := h.linkService.GetUserLinks(userID.(string))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 		return
 	}
 
@@ -69,14 +72,17 @@ func (h *LinkHandler) GetUserLinks(c *gin.Context) {
 
 func (h *LinkHandler) DeleteLink(c *gin.Context) {
 	code := c.Param("code")
-	userID := c.GetHeader("X-User-ID")
-	if userID == "" {
-		userID = "demo-user"
+
+	// Get user ID from middleware context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
 	}
 
-	err := h.linkService.DeleteLink(code, userID)
+	err := h.linkService.DeleteLink(code, userID.(string))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 		return
 	}
 

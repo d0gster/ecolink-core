@@ -17,16 +17,16 @@ type FirestoreDB struct {
 
 func NewFirestoreDB(projectID, credentialsPath string) (*FirestoreDB, error) {
 	ctx := context.Background()
-	
+
 	var client *firestore.Client
 	var err error
-	
+
 	if credentialsPath != "" {
 		client, err = firestore.NewClient(ctx, projectID, option.WithCredentialsFile(credentialsPath))
 	} else {
 		client, err = firestore.NewClient(ctx, projectID)
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create firestore client: %v", err)
 	}
@@ -39,10 +39,10 @@ func NewFirestoreDB(projectID, credentialsPath string) (*FirestoreDB, error) {
 
 func (db *FirestoreDB) SaveLink(link *models.Link) error {
 	_, err := db.client.Collection("links").Doc(link.Code).Set(db.ctx, map[string]interface{}{
-		"url":       link.URL,
-		"code":      link.Code,
-		"user_id":   link.UserID,
-		"clicks":    link.Clicks,
+		"url":        link.URL,
+		"code":       link.Code,
+		"user_id":    link.UserID,
+		"clicks":     link.Clicks,
 		"created_at": link.CreatedAt,
 		"updated_at": time.Now(),
 	})
@@ -69,7 +69,7 @@ func (db *FirestoreDB) GetLink(code string) (*models.Link, error) {
 
 func (db *FirestoreDB) GetUserLinks(userID string) ([]*models.Link, error) {
 	iter := db.client.Collection("links").Where("user_id", "==", userID).OrderBy("created_at", firestore.Desc).Documents(db.ctx)
-	
+
 	var links []*models.Link
 	for {
 		doc, err := iter.Next()
@@ -141,7 +141,7 @@ func (db *FirestoreDB) GetUser(id string) (*models.User, error) {
 
 func (db *FirestoreDB) GetUserByGoogleID(googleID string) (*models.User, error) {
 	iter := db.client.Collection("users").Where("google_id", "==", googleID).Limit(1).Documents(db.ctx)
-	
+
 	doc, err := iter.Next()
 	if err != nil {
 		return nil, err
