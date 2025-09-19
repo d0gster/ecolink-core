@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { user, isAuthenticated } from '$lib/auth/google-direct';
-
+	import { user, isAuthenticated } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
+	import { config } from '$lib/config/env';
 	
 	let url = '';
 	let loading = false;
@@ -9,30 +9,26 @@
 	async function shortenUrl() {
 		if (!url) return;
 		
-		// Se não está logado, salva o link e redireciona para login
 		if (!$isAuthenticated || !$user) {
-			localStorage.setItem('ecolink_pending_url', url);
-			goto('/auth');
+			const { login } = await import('$lib/services/authService');
+			const state = btoa(JSON.stringify({ url }));
+			login(state);
 			return;
 		}
 		
-		// Se está logado, cria o link diretamente
 		loading = true;
 		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/links`, {
+			const response = await fetch(`${config.apiUrl}/api/v1/links`, {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-User-ID': $user.id
-				},
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'include',
 				body: JSON.stringify({ url })
 			});
 			
 			if (response.ok) {
 				const result = await response.json();
-				// Save complete result in pendingLink
 				const { pendingLink } = await import('$lib/stores/auth');
-				pendingLink.set(result); // Save complete result
+				pendingLink.set(result);
 				goto('/result');
 			} else {
 				console.error('API Error:', response.status);

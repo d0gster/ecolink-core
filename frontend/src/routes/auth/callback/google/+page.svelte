@@ -3,47 +3,14 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { handleCallback } from '$lib/auth/google-direct';
-	import type { User } from '$lib/stores/auth';
-
 
 	let loading = true;
 	let error: string | null = null;
 
-	async function processPendingLink(userData: User) {
-		const pendingUrl = localStorage.getItem('ecolink_pending_url');
-		if (!pendingUrl) {
-			goto('/dashboard');
-			return;
-		}
-
-		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/links`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-User-ID': userData.id
-				},
-				body: JSON.stringify({ url: pendingUrl })
-			});
-
-			if (response.ok) {
-				const result = await response.json();
-				localStorage.removeItem('ecolink_pending_url');
-				goto(`/result?short=${encodeURIComponent(result.shortUrl)}`);
-			} else {
-				localStorage.removeItem('ecolink_pending_url');
-				goto('/dashboard');
-			}
-		} catch (err) {
-			console.error('Error processing pending link:', err);
-			localStorage.removeItem('ecolink_pending_url');
-			goto('/dashboard');
-		}
-	}
-
 	onMount(async () => {
 		const code = $page.url.searchParams.get('code');
-		
+		const state = $page.url.searchParams.get('state');
+
 		if (!code) {
 			error = 'Authorization code not found';
 			loading = false;
@@ -51,12 +18,33 @@
 		}
 
 		try {
-			// Processa o código OAuth real
-			const userData = await handleCallback(code);
+			await handleCallback(code, state || undefined);
+
+			if (state) {
+				try {
+					const { url: pendingUrl } = JSON.parse(atob(state));
+					if (pendingUrl) {
+						const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/links`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							credentials: 'include',
+							body: JSON.stringify({ url: pendingUrl })
+						});
+
+						if (response.ok) {
+							const result = await response.json();
+							const { pendingLink } = await import('$lib/stores/auth');
+							pendingLink.set(result);
+							goto('/result');
+							return;
+						}
+					}
+				} catch (err) {
+					console.error('Error processing state:', err);
+				}
+			}
 			
-			// Check if there is a pending link to process
-			await processPendingLink(userData);
-			
+			goto('/dashboard');
 		} catch (err: any) {
 			console.error('Callback error:', err);
 			error = err.message || 'Authentication error';
@@ -74,12 +62,12 @@
 		{#if loading}
 			<div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-eco-600 mb-4"></div>
 			<h1 class="text-xl font-semibold text-gray-900 mb-2">Processing login...</h1>
-			<p class="text-gray-600">Please wait a moment</p>
+			<p class="text-gray-600">Wait a moment</p>
 		{:else if error}
 			<div class="text-red-600 mb-4">❌</div>
-			<h1 class="text-xl font-semibold text-red-600 mb-2">Login Error</h1>
+			<h1 class="text-xl font-semibold text-red-600 mb-2">Login error</h1>
 			<p class="text-gray-600 mb-4">{error}</p>
-			<a href="/auth" class="btn-eco">Try Agaoin</a>
+			<a href="/auth" class="btn-eco">Try again</a>
 		{/if}
 	</div>
 </div>

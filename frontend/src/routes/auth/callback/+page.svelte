@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { handleCallback } from '$lib/auth/google-direct.ts';
+	import { handleCallback } from '$lib/auth/google-direct';
 
 	let loading = true;
 	let error: string | null = null;

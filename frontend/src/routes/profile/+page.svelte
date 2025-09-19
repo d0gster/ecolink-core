@@ -1,29 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { user, isAuthenticated, logout } from '$lib/auth/google-direct.ts';
+	import { logout } from '$lib/auth/google-direct';
+	import { requireAuth } from '$lib/auth/auth-guard';
 	import { goto } from '$app/navigation';
-	import type { ProfileData } from '$lib/types/profileData.ts';
+	import { config } from '$lib/config/env';
+	import type { ProfileData } from '$lib/types/profileData';
 
 	let profileData: ProfileData | null = null;
 	let loading = true;
 	let error: string | null = null;
 
 	onMount(async () => {
-		if (!$isAuthenticated || !$user) {
-			goto('/auth');
-			return;
-		}
+		if (!(await requireAuth())) return;
 
 		try {
-			const response = await fetch('http://localhost:8080/api/v1/profile', {
-				headers: {
-					'X-User-ID': $user.id
-				}
+			const response = await fetch(`${config.apiUrl}/api/v1/me`, {
+				credentials: 'include'
 			});
 
 			if (response.ok) {
-				const data = await response.json();
-				profileData = data.user;
+				profileData = await response.json();
 			} else if (response.status === 404) {
 				error = 'Usuário não encontrado. Faça login novamente.';
 			} else {

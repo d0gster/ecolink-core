@@ -1,35 +1,31 @@
-const API_BASE = 'http://localhost:8080/api/v1';
+import { config } from '$lib/config/env';
 
-export async function createLink(url: string, userID: string) {
-	const response = await fetch(`${API_BASE}/links`, {
+export async function createLink(url: string) {
+	const response = await fetch(`${config.apiUrl}/api/v1/links`, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'X-User-ID': userID
-		},
+		headers: { 'Content-Type': 'application/json' },
+		credentials: 'include',
 		body: JSON.stringify({ url })
 	});
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`Erro ao criar link: ${response.status} ${errorText}`);
+		throw new Error(`Error creating link: ${response.status} ${errorText}`);
 	}
 
-	return response.json() as Promise<{ short_url: string; qr_code: string }>;
+	return response.json();
 }
 
-export async function getUserLinks(userID: string) {
-	const response = await fetch(`${API_BASE}/links`, {
-		headers: {
-			'X-User-ID': userID
-		}
+export async function getUserLinks() {
+	const response = await fetch(`${config.apiUrl}/api/v1/links`, {
+		credentials: 'include'
 	});
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`Erro ao carregar links: ${response.status} ${errorText}`);
+		throw new Error(`Error loading links: ${response.status} ${errorText}`);
 	}
 
-	const data = await (response.json() as Promise<{ links: any[] }>);
+	const data = await response.json();
 	return data.links || [];
 }

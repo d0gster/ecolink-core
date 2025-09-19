@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { login, isAuthenticated } from '$lib/auth/google-direct.ts';
+	import { login } from '$lib/auth/google-direct';
+	import { isAuthenticated } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import type { Provider } from '$lib/types/provider.ts';
+	import type { Provider } from '$lib/types/provider';
 
 	let loading = false;
 
@@ -28,7 +29,12 @@
 		
 		loading = true;
 		try {
-			await login();
+			const pendingUrl = localStorage.getItem('ecolink_pending_url');
+			let state;
+			if (pendingUrl) {
+				state = btoa(JSON.stringify({ url: pendingUrl }));
+			}
+			await login(state);
 		} catch (error) {
 			console.error('Login error:', error);
 			loading = false;
@@ -45,7 +51,7 @@
 		<div class="text-center mb-8">
 			<div class="text-4xl mb-4">🌱</div>
 			<h1 class="text-2xl font-bold text-gray-900 mb-2">Enter EcoLink</h1>
-<p class="text-gray-600">Log in to access your sustainable links</p>
+			<p class="text-gray-600">Log in to access your sustainable links</p>
 		</div>
 
 		<div class="space-y-3">

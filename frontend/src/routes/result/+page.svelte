@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { user, isAuthenticated } from '$lib/auth/google-direct';	
+	import { user, isAuthenticated } from '$lib/stores/auth';	
 	import { pendingLink } from '$lib/stores/auth';
 	import type { Result } from '$lib/types/result';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	
-	let result: Result = {shortUrl: ""};
+	let result: Result = {shortCode: ""};
 	let loading = true;
 
 	onMount(async () => {
@@ -18,13 +18,13 @@
 		// Get result from pendingLink or URL
 		const pending = $pendingLink;
 		if (pending) {
-			result = { shortUrl: pending.shortUrl, qrCode: pending.qrCode };
+			result = { shortCode: pending.shortCode, qrCode: pending.qrCode };
 			pendingLink.set(null); // Clear after use
 			loading = false;
 		} else {
 			const shortUrl = $page.url.searchParams.get('short');
 			if (shortUrl) {
-				result = { shortUrl: shortUrl };
+				result = { shortCode: shortUrl };
 				loading = false;
 			} else {
 				goto('/dashboard');
@@ -57,12 +57,12 @@
 							{#if result}
 							<input
 								id="shortened-url"
-									value={result.shortUrl}
+									value={result.shortCode}
 									readonly
 									class="input-eco flex-1 text-lg"
 								/>
 							<button
-								on:click={() => navigator.clipboard.writeText(result.shortUrl)}
+								on:click={() => navigator.clipboard.writeText(result.shortCode)}
 								class="btn-eco"
 							>
 								Copy

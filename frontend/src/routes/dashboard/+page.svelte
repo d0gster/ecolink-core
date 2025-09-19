@@ -1,37 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { user, isAuthenticated } from '$lib/auth/google-direct';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
+	import { requireAuth } from '$lib/auth/auth-guard';
+	import { config } from '$lib/config/env';
 	import type { Link } from '$lib/types/link';
 
 	let links: Link[] = [];
 	let loading = true;
-	let baseUrl = '';
 
 	onMount(async () => {
-		if (!$isAuthenticated || !$user) {
-			goto('/auth');
-			return;
-		}
-
-		// Set dynamic base URL
-		if (browser) {
-			baseUrl = window.location.origin;
-		}
+		if (!(await requireAuth())) return;
 
 		try {
-			const response = await fetch('http://localhost:8080/api/v1/links', {
-				headers: {
-					'X-User-ID': $user.id
-				}
+			const response = await fetch(`${config.apiUrl}/api/v1/links`, {
+				credentials: 'include'
 			});
 			
 			if (response.ok) {
 				const data = await response.json();
 				links = data.links || [];
 			} else {
-				console.error('API Error:', response.status);
+				console.error('Error loading links:', response.status);
 			}
 		} catch (error) {
 			console.error('Error loading links:', error);
@@ -85,7 +73,7 @@
 										</p>
 										<div class="flex items-center space-x-4 mt-1">
 											<p class="text-sm text-eco-600">
-												{baseUrl}/{link.shortCode}
+												{config.apiUrl}/{link.shortCode}
 											</p>
 											<span class="text-sm text-gray-500">
 												{link.clickCount} clicks
@@ -99,7 +87,7 @@
 							</div>
 							<div class="flex items-center space-x-2">
 								<button
-									on:click={() => navigator.clipboard.writeText(`${baseUrl}/${link.shortCode}`)} 
+									on:click={() => navigator.clipboard.writeText(`${config.apiUrl}/${link.shortCode}`)} 
 									class="text-eco-600 hover:text-eco-700 text-sm font-medium"
 								>
 									Copy

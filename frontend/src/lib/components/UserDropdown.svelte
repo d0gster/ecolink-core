@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { user, isAuthenticated, logout } from '$lib/auth/google-direct.ts';
+	import { user, isAuthenticated } from '$lib/stores/auth';
+	import { logout } from '$lib/auth/google-direct';
 	import { goto } from '$app/navigation';
 	
 	let showDropdown = false;
@@ -42,7 +43,7 @@
 		</button>
 
 		{#if showDropdown}
-			<div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50" on:click|stopPropagation>
+			<div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50" role="menu" tabindex="-1" on:click|stopPropagation on:keydown={(e) => e.key === 'Escape' && (showDropdown = false)}>
 				<div class="py-2">
 					<div class="px-4 py-2 border-b border-gray-100">
 						<p class="text-sm font-medium text-gray-900">{$user.name}</p>
@@ -54,7 +55,7 @@
 						class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
 					>
 						<span>👤</span>
-						<span>Perfil</span>
+						<span>Profile</span>
 					</button>
 					
 					<button
@@ -62,7 +63,7 @@
 						class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
 					>
 						<span>🚪</span>
-						<span>Sair</span>
+						<span>Logout</span>
 					</button>
 				</div>
 			</div>
@@ -70,7 +71,7 @@
 	</div>
 {:else}
 	<a href="/auth" class="text-gray-700 hover:text-eco-600 font-medium">
-		Entrar
+		Login
 	</a>
 {/if}
 

@@ -1,5 +1,5 @@
 export interface Result {
-	shortUrl: string;
+	shortCode: string;
 	qrCode?: string;
 }
 
