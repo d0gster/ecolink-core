@@ -1,43 +1,47 @@
-# 🏗️ EcoLink - Documentação de Arquitetura
+# 🏗️ EcoLink - Architecture Documentation
 
-## 📋 Visão Geral
+## 📋 Overview
 
-EcoLink foi desenvolvido seguindo rigorosamente os princípios de **Clean Architecture**, **SOLID** e **Clean Code**, estabelecidos por Robert C. Martin (Uncle Bob) e Martin Fowler. Esta documentação detalha as decisões arquiteturais e padrões implementados.
+EcoLink was developed strictly following **Clean Architecture**, **SOLID**, and **Clean Code** principles, established by Robert C. Martin (Uncle Bob) and Martin Fowler. This documentation details the architectural decisions and implemented patterns.
 
-## 🎯 Princípios Arquiteturais
+## 🎯 Architectural Principles
 
-### Clean Architecture (Hexagonal)
+### Clean Architecture (Hexagonal) - Current Implementation
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    🌐 External Interfaces                   │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Web UI    │  │  REST API   │  │    Database         │  │
-│  │ (SvelteKit) │  │   (Gin)     │  │ (Memory/Firestore)  │  │
+│  │ SvelteKit   │  │ Gin Router  │  │   Google OAuth      │  │
+│  │ Frontend    │  │ REST API    │  │   Authentication    │  │
+│  │ (Port 5173) │  │ (Port 8080) │  │   (External)        │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
            │                │                      │
 ┌─────────────────────────────────────────────────────────────┐
 │                 🔌 Interface Adapters                       │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │  Controllers│  │  Presenters │  │    Gateways         │  │
-│  │  (Handlers) │  │   (JSON)    │  │  (Repository)       │  │
+│  │   Handlers  │  │ Middleware  │  │   Database          │  │
+│  │ (HTTP/JSON) │  │(Auth/CORS)  │  │   Adapters          │  │
+│  │ Controllers │  │ Security    │  │ (Memory/Firestore)  │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
            │                │                      │
 ┌─────────────────────────────────────────────────────────────┐
 │                   💼 Application Business Rules             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Use Cases │  │  Services   │  │    Interfaces       │  │
-│  │ (Link CRUD) │  │(Link/User)  │  │   (Database)        │  │
+│  │   Services  │  │   Security  │  │    Interfaces       │  │
+│  │(Link/User)  │  │ JWT Service │  │   (Database)        │  │
+│  │ Use Cases   │  │ Auth Logic  │  │   Contracts         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
            │                │                      │
 ┌─────────────────────────────────────────────────────────────┐
 │                    🏛️ Enterprise Business Rules             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Entities  │  │   Models    │  │    Domain Logic     │  │
-│  │ (Link/User) │  │ (Structs)   │  │   (Validation)      │  │
+│  │   Models    │  │   Domain    │  │    Validation       │  │
+│  │ (Link/User) │  │   Entities  │  │    Business         │  │
+│  │ Structures  │  │   Core      │  │    Rules            │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -45,49 +49,66 @@ EcoLink foi desenvolvido seguindo rigorosamente os princípios de **Clean Archit
 ### SOLID Principles
 
 #### 🔸 Single Responsibility Principle (SRP)
-- **Handlers**: Apenas processamento HTTP
-- **Services**: Apenas lógica de negócio
-- **Models**: Apenas representação de dados
-- **Database**: Apenas persistência
+- **Handlers**: Only HTTP processing
+- **Services**: Only business logic
+- **Models**: Only data representation
+- **Database**: Only persistence
 
 #### 🔸 Open/Closed Principle (OCP)
-- **Database Interface**: Extensível para novos adapters
-- **Middleware**: Composável e extensível
-- **Services**: Abertos para extensão via interfaces
+- **Database Interface**: Extensible for new adapters
+- **Middleware**: Composable and extensible
+- **Services**: Open for extension via interfaces
 
 #### 🔸 Liskov Substitution Principle (LSP)
-- **Database Implementations**: Memory e Firestore são intercambiáveis
-- **Auth Providers**: Google OAuth pode ser substituído
+- **Database Implementations**: Memory and Firestore are interchangeable
+- **Auth Providers**: Google OAuth can be replaced
 
 #### 🔸 Interface Segregation Principle (ISP)
-- **Database Interface**: Métodos específicos por funcionalidade
-- **Service Interfaces**: Contratos mínimos e focados
+- **Database Interface**: Specific methods per functionality
+- **Service Interfaces**: Minimal and focused contracts
 
 #### 🔸 Dependency Inversion Principle (DIP)
-- **High-level modules**: Dependem de abstrações
-- **Dependency Injection**: Implementado via constructors
+- **High-level modules**: Depend on abstractions
+- **Dependency Injection**: Implemented via constructors
 
-## 🏛️ Estrutura do Backend (Go)
+## 🏛️ Backend Structure (Go 1.21+)
 
-### Organização de Diretórios
+### Current Directory Organization
 
 ```
 backend/
-├── cmd/                    # Application entry points
-│   └── main.go            # Main application
-├── internal/              # Private application code
-│   ├── config/           # Configuration management
-│   ├── handlers/         # HTTP handlers (Controllers)
-│   ├── middleware/       # HTTP middleware
-│   ├── models/          # Domain models (Entities)
-│   └── services/        # Business logic (Use Cases)
-├── pkg/                  # Public library code
-│   ├── database/        # Database interfaces and implementations
-│   └── utils/           # Utility functions
-└── go.mod              # Go modules
+├── cmd/
+│   └── main.go                  # Application entry point & DI composition
+├── internal/                    # Private application code
+│   ├── config/
+│   │   └── config.go           # Configuration management + cookie settings
+│   ├── handlers/               # HTTP handlers (Interface Adapters)
+│   │   ├── auth_handler.go     # Google OAuth + JWT authentication
+│   │   ├── link_handler.go     # Link CRUD operations
+│   │   └── user_handler.go     # User profile management
+│   ├── middleware/             # Cross-cutting concerns
+│   │   └── auth.go            # JWT middleware + security headers + CORS
+│   ├── models/                 # Domain entities
+│   │   ├── link.go            # Link entity + request/response DTOs
+│   │   └── user.go            # User entity + Google OAuth DTOs
+│   ├── security/               # Security services
+│   │   └── jwt_service.go     # JWT generation & validation
+│   └── services/               # Business logic (Use Cases)
+│       ├── link_service.go    # Link shortening + QR generation + deduplication
+│       └── user_service.go    # User management + Google OAuth integration
+├── pkg/                        # Public library code
+│   ├── database/              # Database abstraction layer
+│   │   ├── firestore.go       # Firestore adapter (production)
+│   │   ├── interface.go       # Database interface contract
+│   │   └── memory.go          # In-memory adapter (development)
+│   └── utils/
+│       └── shortener.go       # URL shortening algorithm
+├── .env                       # Environment variables
+├── go.mod                     # Go modules (Go 1.21)
+└── go.sum                     # Dependency checksums
 ```
 
-### Camadas e Responsabilidades
+### Layers and Responsibilities
 
 #### 🎯 Domain Layer (`internal/models/`)
 ```go
@@ -160,25 +181,65 @@ type MemoryDatabase struct {
 }
 ```
 
-## 🎨 Estrutura do Frontend (SvelteKit)
+## 🎨 Frontend Structure (SvelteKit + TypeScript)
 
-### Organização de Diretórios
+### Current Directory Organization
 
 ```
-frontend/src/
-├── lib/                   # Shared libraries
-│   ├── auth/             # Authentication logic
-│   ├── stores/           # State management
-│   ├── components/       # Reusable components
-│   └── api.js           # API client
-├── routes/               # Page components (File-based routing)
-│   ├── auth/            # Authentication pages
-│   ├── dashboard/       # User dashboard
-│   └── +layout.svelte   # Root layout
-└── app.html             # HTML template
+frontend/
+├── src/
+│   ├── lib/                   # Shared libraries (TypeScript)
+│   │   ├── auth/             # Authentication logic
+│   │   │   ├── auth-guard.ts     # Route protection guards
+│   │   │   ├── google-direct.ts  # Google OAuth implementation
+│   │   │   └── guard.ts          # Guard utilities
+│   │   ├── components/       # Reusable Svelte components
+│   │   │   ├── BackgroundVideo.svelte
+│   │   │   └── UserDropdown.svelte
+│   │   ├── config/
+│   │   │   └── env.ts           # Environment configuration
+│   │   ├── services/         # API & business logic
+│   │   │   ├── api.ts           # HTTP client
+│   │   │   └── authService.ts   # Authentication service (SRP)
+│   │   ├── stores/           # Reactive state management
+│   │   │   └── auth.ts          # Authentication stores
+│   │   ├── types/            # TypeScript interfaces
+│   │   │   ├── link.ts          # Link-related types
+│   │   │   ├── profileData.ts   # User profile types
+│   │   │   ├── provider.ts      # OAuth provider types
+│   │   │   └── result.ts        # API response types
+│   │   └── utils/
+│   │       └── constants.ts     # Application constants
+│   ├── routes/               # SvelteKit file-based routing
+│   │   ├── auth/            # Authentication pages
+│   │   │   ├── callback/
+│   │   │   │   └── google/
+│   │   │   │       └── +page.svelte  # Google OAuth callback
+│   │   │   └── +page.svelte     # Auth landing page
+│   │   ├── dashboard/       # User dashboard
+│   │   │   └── +page.svelte     # Links management
+│   │   ├── profile/         # User profile
+│   │   │   └── +page.svelte     # Profile management
+│   │   ├── result/          # Link creation result
+│   │   │   └── +page.svelte     # QR code display
+│   │   ├── +layout.svelte   # Root layout + session rehydration
+│   │   └── +page.svelte     # Homepage + link shortening form
+│   ├── app.css              # Global styles + TailwindCSS
+│   ├── app.d.ts             # TypeScript global declarations
+│   └── app.html             # HTML template
+├── static/                  # Static assets
+│   ├── images/
+│   └── videos/              # Background videos
+├── .env.example             # Environment template
+├── .env.local               # Local environment (gitignored)
+├── package.json             # Dependencies + scripts
+├── svelte.config.js         # SvelteKit configuration
+├── tailwind.config.js       # TailwindCSS + eco theme
+├── tsconfig.json            # TypeScript configuration
+└── vite.config.ts           # Vite build configuration
 ```
 
-### Padrões Implementados
+### Implemented Patterns
 
 #### 🔄 State Management (Reactive Stores)
 ```javascript
@@ -222,25 +283,114 @@ export async function exchangeCodeForTokens(code) {
 }
 ```
 
-## 🔐 Segurança e Autenticação
+## 🔐 Security and Authentication
 
-### OAuth 2.0 Implementation
+### Google OAuth 2.0 Implementation (Manual)
 
-#### Authorization Code Flow
-1. **Authorization Request**: Redirect to Google
-2. **Authorization Grant**: User consent
-3. **Authorization Code**: Callback with code
-4. **Access Token**: Exchange code for token
-5. **Protected Resource**: API calls with token
+#### Implemented Authorization Code Flow
+1. **Authorization Request**: Frontend redirects to `accounts.google.com`
+2. **User Consent**: User authorizes access (openid, profile, email)
+3. **Authorization Code**: Google redirects to `/auth/callback/google` with code
+4. **Token Exchange**: Backend exchanges code for access_token via `oauth2.googleapis.com/token`
+5. **User Info**: Backend fetches user data via `googleapis.com/oauth2/v2/userinfo`
+6. **JWT Generation**: Backend generates JWT and sets HTTP-only cookie
+7. **Session Management**: Frontend stores state in Svelte stores
 
-#### Security Measures
-- **CSRF Protection**: State parameter validation
-- **Token Security**: Secure storage and transmission
-- **Session Management**: Proper cleanup on logout
-- **Input Validation**: All inputs sanitized
-- **CORS Configuration**: Proper origin validation
+#### Detailed Authentication Flow
 
-## 📊 Qualidade e Métricas
+```typescript
+// Frontend: authService.ts
+export function login(state?: string) {
+  const params = new URLSearchParams({
+    client_id: config.googleClientId,
+    redirect_uri: `${window.location.origin}/auth/callback/google`,
+    response_type: 'code',
+    scope: 'openid profile email'
+  });
+  
+  if (state) params.append('state', state);
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+export async function verifySession(): Promise<User | null> {
+  const response = await fetch(`${config.apiUrl}/api/v1/me`, {
+    credentials: 'include' // Includes ecolink_token cookie
+  });
+  
+  if (response.ok) {
+    const user = await response.json();
+    userStore.set(user);
+    isAuthenticated.set(true);
+    return user;
+  }
+  
+  return null;
+}
+```
+
+```go
+// Backend: auth_handler.go
+func (h *AuthHandler) GoogleCallback(c *gin.Context) {
+    // 1. Extract code from request
+    var req struct {
+        Code        string `json:"code" binding:"required"`
+        RedirectURI string `json:"redirect_uri" binding:"required"`
+        State       string `json:"state,omitempty"`
+    }
+    
+    // 2. Exchange code for access_token
+    token, err := h.exchangeCodeForToken(req.Code, req.RedirectURI)
+    
+    // 3. Fetch user information
+    userInfo, err := h.getUserInfo(token.AccessToken)
+    
+    // 4. Create/update user in system
+    user, err := h.userService.CreateOrUpdateUser(
+        userInfo.ID, userInfo.Name, userInfo.Email, userInfo.Picture)
+    
+    // 5. Generate JWT
+    jwtToken, err := h.jwtService.GenerateToken(user.ID, user.Email)
+    
+    // 6. Set HTTP-only cookie with security settings
+    cookie := &http.Cookie{
+        Name:     "ecolink_token",
+        Value:    jwtToken,
+        Path:     "/",
+        Domain:   h.cfg.CookieDomain,
+        MaxAge:   3600 * 24 * 30, // 30 days
+        HttpOnly: true,
+        Secure:   h.cfg.CookieSecure,
+        SameSite: parseSameSite(h.cfg.CookieSameSite),
+    }
+    
+    http.SetCookie(c.Writer, cookie)
+}
+```
+
+#### Implemented Security Measures
+- **HTTP-Only Cookies**: JWT token stored in secure cookie
+- **Cookie Configuration**: Configurable Domain, Secure flag and SameSite
+- **JWT Validation**: Middleware validates token on protected routes
+- **Session Rehydration**: Frontend revalidates session on page load
+- **CORS Configuration**: Specific origin configured for security
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
+- **State Management**: Loading states prevent authentication flashes
+
+#### Security Configuration
+
+```bash
+# Development
+COOKIE_DOMAIN=localhost
+COOKIE_SECURE=false
+COOKIE_SAMESITE=Lax
+
+# Production
+COOKIE_DOMAIN=yourdomain.com
+COOKIE_SECURE=true
+COOKIE_SAMESITE=Strict
+```
+
+## 📊 Quality and Metrics
 
 ### Code Quality Metrics
 - **Cyclomatic Complexity**: < 10 per function
@@ -341,16 +491,16 @@ func (s *LinkService) CreateLink(url, userID string) (*models.LinkResponse, erro
 - **Caching Strategy**: Redis for high-frequency data
 - **CDN Integration**: Global asset distribution
 
-## 📚 Referências e Inspirações
+## 📚 References and Inspirations
 
-### Livros Aplicados
+### Applied Books
 - **Clean Architecture** - Robert C. Martin
 - **Clean Code** - Robert C. Martin
 - **The Clean Coder** - Robert C. Martin
 - **Refactoring** - Martin Fowler
 - **Domain-Driven Design** - Eric Evans
 
-### Padrões Implementados
+### Implemented Patterns
 - **Repository Pattern**: Database abstraction
 - **Dependency Injection**: Loose coupling
 - **Factory Pattern**: Object creation
@@ -359,7 +509,7 @@ func (s *LinkService) CreateLink(url, userID string) (*models.LinkResponse, erro
 
 ---
 
-**Arquiteto**: Danilo Monteiro  
-**Princípios**: Clean Architecture, SOLID, DDD  
-**Qualidade**: Code Review, Testing, Documentation  
-**Mentoria**: Robert C. Martin, Martin Fowler
+**Architect**: Danilo Monteiro  
+**Principles**: Clean Architecture, SOLID, DDD  
+**Quality**: Code Review, Testing, Documentation  
+**Mentorship**: Robert C. Martin, Martin Fowler, Alexander Shvets
