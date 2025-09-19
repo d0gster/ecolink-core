@@ -1,0 +1,1 @@
+import{g as n,a as e,i as a,u as o}from"./navigation.f767a769.js";import{j as r}from"./scheduler.ffbd56c5.js";async function h(){return r(e)?new Promise(s=>{const u=e.subscribe(i=>{i||(u(),s(t()))})}):t()}function t(){return!r(a)||!r(o)?(n("/auth"),!1):!0}export{h as r};

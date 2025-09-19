@@ -1,0 +1,1 @@
+import{w as t,k as o}from"./singletons.edde51cd.js";const e=t(null),s=t(!1),n=t(!0),a=t(null),l=Object.freeze(Object.defineProperty({__proto__:null,isAuthenticated:s,isLoading:n,pendingLink:a,user:e},Symbol.toStringTag,{value:"Module"})),r=o("goto");export{n as a,l as b,r as g,s as i,a as p,e as u};
