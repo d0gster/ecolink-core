@@ -29,7 +29,7 @@ type LoginRequest struct {
 type GoogleCallbackRequest struct {
 	Code        string `json:"code" validate:"required"`
 	State       string `json:"state" validate:"required"`
-	RedirectURI string `json:"redirect_uri" validate:"required,url"`
+	RedirectURI string `json:"redirect_uri" validate:"required"`
 }
 
 func NewAuthHandler(authService usecase.AuthService, validator *validation.Validator) *AuthHandler {
@@ -100,8 +100,23 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 	redirectURL, state := h.authService.HandleGoogleLogin(c.Request.Context())
 
+	// Auto-detect HTTPS for secure flag
+	secure := c.Request.TLS != nil
+
+	// Set SameSite based on HTTPS
+	sameSite := "Lax"
+	if secure {
+		sameSite = "Strict"
+	}
+
 	// Store state in secure cookie for CSRF protection
-	c.SetCookie("oauth_state", state, 600, "/", "", false, true) // 10 minutes
+	c.SetCookie("oauth_state", state, 600, "/", "", secure, true) // 10 minutes
+
+	// Set SameSite manually
+	existingCookie := c.Writer.Header().Get("Set-Cookie")
+	if existingCookie != "" {
+		c.Writer.Header().Set("Set-Cookie", existingCookie+"; SameSite="+sameSite)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"redirect_url": redirectURL,
@@ -123,15 +138,35 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Verify state parameter (CSRF protection)
+	// Verify state parameter (CSRF protection) - REQUIRED for security
+	if req.State == "" {
+		c.JSON(http.StatusBadRequest, errors.NewSecurityError("State parameter is required"))
+		return
+	}
+
 	storedState, err := c.Cookie("oauth_state")
 	if err != nil || storedState != req.State {
 		c.JSON(http.StatusBadRequest, errors.NewSecurityError("Invalid state parameter"))
 		return
 	}
 
-	// Clear state cookie
-	c.SetCookie("oauth_state", "", -1, "/", "", false, true)
+	// Auto-detect HTTPS for secure flag when clearing state cookie
+	secure := c.Request.TLS != nil
+
+	// Set SameSite based on HTTPS
+	sameSite := "Lax"
+	if secure {
+		sameSite = "Strict"
+	}
+
+	// Clear state cookie with proper security attributes
+	c.SetCookie("oauth_state", "", -1, "/", "", secure, true)
+
+	// Set SameSite manually
+	existingCookie := c.Writer.Header().Get("Set-Cookie")
+	if existingCookie != "" {
+		c.Writer.Header().Set("Set-Cookie", existingCookie+"; SameSite="+sameSite)
+	}
 
 	// Process OAuth callback
 	token, err := h.authService.HandleGoogleCallback(c.Request.Context(), req.Code, req.State)
@@ -143,9 +178,16 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	// Set secure HTTP-only cookie
 	h.setAuthCookie(c, token.Token, token.ExpiresAt)
 
+	// Get user info for response
+	user, err := h.authService.GetUserByID(c.Request.Context(), token.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errors.NewBusinessError("Failed to get user info", err.Error()))
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":    "OAuth login successful",
-		"expires_at": token.ExpiresAt,
+		"user":  user,
+		"state": req.State,
 	})
 }
 
@@ -157,19 +199,34 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authService.UserRepo.FindByID(c.Request.Context(), userID.(string))
+	user, err := h.authService.GetUserByID(c.Request.Context(), userID.(string))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, errors.NewBusinessError("Failed to retrieve user profile", err.Error()))
+		c.JSON(http.StatusNotFound, errors.NewBusinessError("User not found", err.Error()))
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user": user})
+	c.JSON(http.StatusOK, user)
 }
 
-// Logout clears the authentication cookie
+// Logout clears the authentication cookie with auto-detection
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// Clear auth cookie
-	c.SetCookie("ecolink_token", "", -1, "/", "", false, true)
+	// Auto-detect HTTPS for secure flag
+	secure := c.Request.TLS != nil
+
+	// Set SameSite based on HTTPS
+	sameSite := "Lax"
+	if secure {
+		sameSite = "Strict"
+	}
+
+	// Clear auth cookie with proper security attributes
+	c.SetCookie("ecolink_token", "", -1, "/", "", secure, true)
+
+	// Set SameSite manually
+	existingCookie := c.Writer.Header().Get("Set-Cookie")
+	if existingCookie != "" {
+		c.Writer.Header().Set("Set-Cookie", existingCookie+"; SameSite="+sameSite)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logout successful",
@@ -180,6 +237,9 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) setAuthCookie(c *gin.Context, token string, expiresAt time.Time) {
 	maxAge := int(time.Until(expiresAt).Seconds())
 
+	// Auto-detect HTTPS for secure flag
+	secure := c.Request.TLS != nil
+
 	// Set secure cookie with proper attributes
 	c.SetCookie(
 		"ecolink_token", // name
@@ -187,7 +247,19 @@ func (h *AuthHandler) setAuthCookie(c *gin.Context, token string, expiresAt time
 		maxAge,          // maxAge
 		"/",             // path
 		"",              // domain (empty for same-origin)
-		false,           // secure (should be true in production with HTTPS)
+		secure,          // secure flag based on HTTPS
 		true,            // httpOnly
 	)
+
+	// Set SameSite attribute manually via header
+	sameSite := "Lax"
+	if secure {
+		sameSite = "Strict" // Stricter for HTTPS
+	}
+
+	// Get existing Set-Cookie header and append SameSite
+	existingCookie := c.Writer.Header().Get("Set-Cookie")
+	if existingCookie != "" {
+		c.Writer.Header().Set("Set-Cookie", existingCookie+"; SameSite="+sameSite)
+	}
 }

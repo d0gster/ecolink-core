@@ -7,7 +7,6 @@ import (
 	"ecolink-core/internal/config"
 	"ecolink-core/internal/handlers"
 	"ecolink-core/internal/middleware"
-	"ecolink-core/internal/security"
 	"ecolink-core/internal/services"
 	"ecolink-core/internal/validation"
 	"ecolink-core/pkg/database"
@@ -38,13 +37,6 @@ func setupRouter(cfg *config.Config, db database.Database) *gin.Engine {
 	linkService := services.NewLinkService(db, cfg.BaseURL)
 	userService := services.NewUserService(db)
 
-	// Initialize JWT service
-	jwtService := security.NewJWTService(
-		cfg.Security.JWTSecret,
-		"ecolink",
-		"ecolink-users",
-	)
-
 	// Initialize auth services
 	tokenService := usecase.NewJWTTokenService(
 		cfg.Security.JWTSecret,
@@ -71,11 +63,8 @@ func setupRouter(cfg *config.Config, db database.Database) *gin.Engine {
 	// Initialize validator
 	validator := validation.NewValidator()
 
-	// Legacy auth handler (to be replaced)
-	authHandler := handlers.NewAuthHandler(cfg, userService, jwtService)
-
-	// New auth handler (when repository is implemented)
-	newAuthHandler := http.NewAuthHandler(*authService, validator)
+	// Secure auth handler with auto-detection
+	authHandler := http.NewAuthHandler(*authService, validator)
 
 	// Setup router
 	r := gin.Default()
@@ -93,11 +82,11 @@ func setupRouter(cfg *config.Config, db database.Database) *gin.Engine {
 	// Auth routes (public)
 	auth := r.Group("/auth")
 	{
-		auth.POST("/google/callback", newAuthHandler.GoogleCallback)
+		auth.POST("/google/callback", authHandler.GoogleCallback)
 		auth.POST("/logout", authHandler.Logout)
-		auth.POST("/register", newAuthHandler.Register)
-		auth.POST("/login", newAuthHandler.Login)
-		auth.GET("/google", newAuthHandler.GoogleLogin)
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/login", authHandler.Login)
+		auth.GET("/google", authHandler.GoogleLogin)
 	}
 
 	// Protected API routes
@@ -108,7 +97,7 @@ func setupRouter(cfg *config.Config, db database.Database) *gin.Engine {
 		api.GET("/csrf-token", csrfHandler.GetCSRFToken)
 
 		// User endpoints
-		api.GET("/me", newAuthHandler.GetCurrentUser)
+		api.GET("/me", authHandler.GetCurrentUser)
 		api.GET("/profile", userHandler.GetProfile)
 
 		// Link endpoints (with CSRF protection)
