@@ -84,3 +84,13 @@ docker-security: ## Scan Docker images for vulnerabilities
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(PWD):/src aquasec/trivy image ecolink-backend:latest
 	@echo "✅ Docker security scan completed"
+
+lines: ## Count lines of code by category
+	@echo "📊 EcoLink Core - Lines of Code"
+	@echo "==========================================="
+	@GO_LINES=$$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -path "*/node_modules/*" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $$1}' || echo "0"); \
+	TS_LINES=$$(find ../frontend -name "*.ts" | grep -v node_modules | grep -v ".svelte-kit" | grep -v "build" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $$1}' || echo "0"); \
+	SVELTE_LINES=$$(find ../frontend -name "*.svelte" | grep -v node_modules | grep -v ".svelte-kit" | grep -v "build" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $$1}' || echo "0"); \
+	TOTAL_LINES=$$(($$GO_LINES + $$TS_LINES + $$SVELTE_LINES)); \
+	echo "Lines of Code: $$TOTAL_LINES (Go: $$GO_LINES | TypeScript: $$TS_LINES | Svelte: $$SVELTE_LINES)"; \
+	echo "==========================================="
