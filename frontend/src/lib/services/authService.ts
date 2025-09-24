@@ -32,8 +32,8 @@ export async function verifySession(): Promise<User | null> {
     userStore.set(data);
     isAuthenticated.set(true);
     return data;
-  } catch (err) {
-    console.error('verifySession error:', err);
+  } catch (error) {
+    console.error('verifySession error:', error);
     userStore.set(null);
     isAuthenticated.set(false);
     return null;
@@ -43,16 +43,26 @@ export async function verifySession(): Promise<User | null> {
 }
 
 export async function handleCallback(code: string, state?: string) {
+  // Generate state if not provided (for security)
+  if (!state) {
+    state = generateSecureState();
+  }
+
   // Delegate to backend auth callback endpoint
   const response = await fetch(`${config.apiUrl}/auth/google/callback`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ code, redirect_uri: `${window.location.origin}/auth/callback/google`, state })
+    body: JSON.stringify({ 
+      code, 
+      redirect_uri: `${window.location.origin}/auth/callback/google`, 
+      state 
+    })
   });
 
   if (!response.ok) {
-    throw new Error('Authentication failed');
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Authentication failed');
   }
 
   const data = await response.json();
@@ -65,14 +75,21 @@ export async function handleCallback(code: string, state?: string) {
 export function login(state?: string) {
   if (!browser) return;
 
+  // Always generate a secure state parameter for CSRF protection
+  if (!state) {
+    state = generateSecureState();
+  }
+
+  // Store state in sessionStorage for verification
+  sessionStorage.setItem('oauth_state', state);
+
   const params = new URLSearchParams({
     client_id: config.googleClientId,
     redirect_uri: `${window.location.origin}/auth/callback/google`,
     response_type: 'code',
-    scope: 'openid profile email'
+    scope: 'openid profile email',
+    state: state
   });
-
-  if (state) params.append('state', state);
 
   window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
@@ -86,6 +103,16 @@ export async function logout() {
   userStore.set(null);
   isAuthenticated.set(false);
   if (browser) window.location.href = '/';
+}
+
+// Generate cryptographically secure state parameter
+function generateSecureState(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 export default {

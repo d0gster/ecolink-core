@@ -1,6 +1,11 @@
 import { config } from '$lib/config/env';
+import { isValidUrl } from '$lib/utils/validation';
 
 export async function createLink(url: string) {
+	if (!isValidUrl(url)) {
+		throw new Error('Invalid URL provided');
+	}
+	
 	const response = await fetch(`${config.apiUrl}/api/v1/links`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
