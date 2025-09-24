@@ -37,7 +37,7 @@ func (v *Validator) formatValidationError(err error) error {
 		messages = append(messages, message)
 	}
 	
-	return fmt.Errorf(strings.Join(messages, "; "))
+	return fmt.Errorf("%s", strings.Join(messages, "; "))
 }
 
 func (v *Validator) getErrorMessage(fe validator.FieldError) string {
@@ -71,8 +71,9 @@ func validateShortCode(fl validator.FieldLevel) bool {
 	}
 	
 	// Only allow alphanumeric characters (prevents path traversal)
-	matched, _ := regexp.MatchString("^[a-zA-Z0-9]+$", code)
-	return matched
+	// Using compiled regex for better performance
+	alphanumericPattern := regexp.MustCompile(`^[a-zA-Z0-9]{6}$`)
+	return alphanumericPattern.MatchString(code)
 }
 
 // validateURLSafe ensures strings don't contain dangerous characters
@@ -95,10 +96,15 @@ func validateURLSafe(fl validator.FieldLevel) bool {
 	return true
 }
 
+// Compiled regex patterns for better performance
+var (
+	htmlTagPattern = regexp.MustCompile(`<[^>]*>`)
+)
+
 // SanitizeInput removes potentially dangerous characters from user input
 func SanitizeInput(input string) string {
-	// Remove HTML tags first
-	input = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(input, "")
+	// Remove HTML tags first using compiled regex
+	input = htmlTagPattern.ReplaceAllString(input, "")
 	
 	// Escape HTML entities in correct order (& first to avoid double encoding)
 	input = strings.ReplaceAll(input, "&", "&amp;")

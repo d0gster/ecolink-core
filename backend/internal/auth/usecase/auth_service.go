@@ -242,6 +242,11 @@ func (s *AuthService) generateSecureID() string {
 	return base64.URLEncoding.EncodeToString(hash[:16])
 }
 
+// GetUserByID retrieves a user by their ID
+func (s *AuthService) GetUserByID(ctx context.Context, userID string) (*domain.User, error) {
+	return s.UserRepo.FindByID(ctx, userID)
+}
+
 // generateSecureState creates a secure state parameter for OAuth
 func (s *AuthService) generateSecureState() string {
 	bytes := make([]byte, 32)
