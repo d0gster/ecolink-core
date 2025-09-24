@@ -1,24 +1,15 @@
 <script lang="ts">
 	import '../app.css';
-import BackgroundVideo from '$lib/components/BackgroundVideo.svelte';
-import UserDropdown from '$lib/components/UserDropdown.svelte';
-import { initGoogleAuth } from '$lib/auth/google-direct';
-import { isLoading } from '$lib/stores/auth';
-import { onDestroy } from 'svelte';
-import { derived } from 'svelte/store';
+	import BackgroundVideo from '$lib/components/BackgroundVideo.svelte';
+	import UserDropdown from '$lib/components/UserDropdown.svelte';
+	import { initGoogleAuth } from '$lib/auth/google-direct';
+	import { isLoading } from '$lib/stores/auth';
 	import { onMount } from 'svelte';
 
-onMount(() => {
-    // Initialize authentication on app load. This delegates to authService.verifySession
-    // which will set user / isAuthenticated / isLoading appropriately.
-    initGoogleAuth();
-});
-
-// derived store to show when skeleton should be visible
-const showSkeleton = derived(isLoading, ($isLoading) => $isLoading === true);
-
-let skeletonUnsub = showSkeleton.subscribe(() => {});
-onDestroy(() => skeletonUnsub());
+	onMount(() => {
+		// Initialize authentication on app load
+		initGoogleAuth();
+	});
 </script>
 
 <div class="min-h-screen relative">

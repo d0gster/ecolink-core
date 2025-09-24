@@ -1,15 +1,21 @@
 <script lang="ts">
-	export let desktopSrc = '';
-	export let mobileSrc = '';
-	export let poster = '';
+	interface Props {
+		desktopSrc?: string;
+		mobileSrc?: string;
+		poster?: string;
+	}
+	
+	let { desktopSrc = '', mobileSrc = '', poster = '' }: Props = $props();
 	
 	let videoElement: HTMLVideoElement;
-	let isMobile = false;
+	let isMobile = $state(false);
 	
-	// Detecta se é mobile
-	$: if (typeof window !== 'undefined') {
-		isMobile = window.innerWidth < 768;
-	}
+	// Svelte 5: usando $effect para detectar mobile
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			isMobile = window.innerWidth < 768;
+		}
+	});
 </script>
 
 <div class="fixed inset-0 -z-10 overflow-hidden">
@@ -21,7 +27,7 @@
 		loop
 		playsinline
 		{poster}
-		on:loadeddata={() => videoElement?.play()}
+		onloadeddata={() => videoElement?.play()}
 	>
 		<source src={isMobile ? mobileSrc : desktopSrc} type="video/mp4" />
 		<!-- Fallback para navegadores sem suporte -->

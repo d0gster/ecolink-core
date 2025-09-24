@@ -2,16 +2,21 @@
 	import { user, isAuthenticated } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { config } from '$lib/config/env';
+	import { validateUserInput } from '$lib/utils/validation';
 	
 	let url = '';
 	let loading = false;
 
 	async function shortenUrl() {
-		if (!url) return;
+		const validation = validateUserInput(url);
+		if (!validation.isValid) {
+			console.error('Invalid URL provided');
+			return;
+		}
 		
 		if (!$isAuthenticated || !$user) {
 			const { login } = await import('$lib/services/authService');
-			const state = btoa(JSON.stringify({ url }));
+			const state = btoa(JSON.stringify({ url: validation.sanitized }));
 			login(state);
 			return;
 		}

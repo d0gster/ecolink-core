@@ -18,7 +18,12 @@
 		// Get result from pendingLink or URL
 		const pending = $pendingLink;
 		if (pending) {
-			result = { shortCode: pending.shortCode, qrCode: pending.qrCode };
+			// Conditionally add qrCode to avoid type incompatibility with exactOptionalPropertyTypes
+			const newResult: Result = { shortCode: pending.shortCode };
+			if (pending.qrCode) {
+				newResult.qrCode = pending.qrCode;
+			}
+			result = newResult;
 			pendingLink.set(null); // Clear after use
 			loading = false;
 		} else {

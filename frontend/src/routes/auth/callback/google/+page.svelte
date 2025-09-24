@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { handleCallback } from '$lib/auth/google-direct';
+	import { handleCallback } from '$lib/services/authService';
 
 	let loading = true;
 	let error: string | null = null;
@@ -17,8 +17,19 @@
 			return;
 		}
 
+		// Verify state parameter for CSRF protection
+		const storedState = sessionStorage.getItem('oauth_state');
+		if (!state || state !== storedState) {
+			error = 'Invalid state parameter - possible CSRF attack';
+			loading = false;
+			return;
+		}
+
+		// Clear stored state
+		sessionStorage.removeItem('oauth_state');
+
 		try {
-			await handleCallback(code, state || undefined);
+			await handleCallback(code, state);
 
 			if (state) {
 				try {
