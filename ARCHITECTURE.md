@@ -71,7 +71,7 @@ EcoLink was developed strictly following **Clean Architecture**, **SOLID**, and 
 - **High-level modules**: Depend on abstractions
 - **Dependency Injection**: Implemented via constructors
 
-## 🏛️ Backend Structure (Go 1.21+)
+## 🏛️ Backend Structure (Go 1.25+)
 
 ### Current Directory Organization
 
@@ -498,7 +498,8 @@ func (s *LinkService) CreateLink(url, userID string) (*models.LinkResponse, erro
 - **Clean Code** - Robert C. Martin
 - **The Clean Coder** - Robert C. Martin
 - **Refactoring** - Martin Fowler
-- **Domain-Driven Design** - Eric Evans
+- **Dive Into Design Patterns** - Alexander Shvets
+- **Dive Into Refactoring** - Alexander Shvets
 
 ### Implemented Patterns
 - **Repository Pattern**: Database abstraction
@@ -511,5 +512,4 @@ func (s *LinkService) CreateLink(url, userID string) (*models.LinkResponse, erro
 
 **Architect**: Danilo Monteiro  
 **Principles**: Clean Architecture, SOLID, DDD  
-**Quality**: Code Review, Testing, Documentation  
-**Mentorship**: Robert C. Martin, Martin Fowler, Alexander Shvets
+**Quality**: Code Review, Testing, Documentation
