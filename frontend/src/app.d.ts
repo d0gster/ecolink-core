@@ -1,11 +1,12 @@
-/// <reference types="svelte" />
-/// <reference types="vite/client" />
-
-interface ImportMetaEnv {
-  VITE_API_URL: string;
-  // more env variables...
+// See https://kit.svelte.dev/docs/types#app
+// for information about these interfaces
+declare global {
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		// interface PageData {}
+		// interface Platform {}
+	}
 }
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
+export {};
